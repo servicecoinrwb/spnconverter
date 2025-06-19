@@ -530,11 +530,14 @@
                     return;
                 }
 
-                let checksummedAddress;
+                let addressToMint;
                 try {
-                    checksummedAddress = window.ethers.utils.getAddress(issueAddress);
+                    // Ethers.js will handle checksum validation implicitly when making the call
+                    addressToMint = issueAddress.trim();
+                    // Optional: You can still use getAddress for immediate UI feedback without blocking the transaction
+                     window.ethers.utils.getAddress(addressToMint);
                 } catch (error) {
-                    showNotification('Invalid address for issuing SPN.', 'error');
+                    showNotification('Invalid address format. Please check for typos.', 'error');
                     return;
                 }
 
@@ -542,10 +545,10 @@
                 try {
                     const spnContract = new window.ethers.Contract(SPN_TOKEN_ADDRESS, SPN_TOKEN_ABI, signer);
                     const amountInWei = window.ethers.utils.parseUnits(issueAmount, 18); // SPN has 18 decimals
-                    const tx = await spnContract.mint(checksummedAddress, amountInWei);
+                    const tx = await spnContract.mint(addressToMint, amountInWei);
                     showNotification('Mint transaction sent...', 'info');
                     await tx.wait();
-                    showNotification(`${issueAmount} SPN minted to ${checksummedAddress.substring(0,6)}...`, 'success');
+                    showNotification(`${issueAmount} SPN minted to ${addressToMint.substring(0,6)}...`, 'success');
                     setIssueAddress('');
                     setIssueAmount('');
                 } catch(err) {
@@ -593,10 +596,31 @@
                             {/* Issue SPN */}
                             <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
                                 <h2 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">3. Admin: Issue SPN (Points)</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                    <input type="text" value={issueAddress} onChange={e => setIssueAddress(e.target.value)} placeholder="Click user below or enter address" className="md:col-span-2 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
-                                    <input type="text" value={issueAmount} onChange={e => setIssueAmount(e.target.value)} placeholder="e.g. 500" className="md:col-span-1 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
-                                    <button onClick={handleIssueSpn} disabled={!isMinter || isLoading} className="md:col-span-3 w-full mt-2 py-3 bg-green-500 text-black font-bold rounded-lg hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center">
+                                 <div className="mb-6">
+                                    <label htmlFor="issueTarget" className="block text-sm font-medium text-gray-300 mb-1">Target Customer Wallet Address</label>
+                                    <input 
+                                        type="text" 
+                                        id="issueTarget" 
+                                        value={issueAddress}
+                                        onChange={e => setIssueAddress(e.target.value)}
+                                        placeholder="Click user below or enter address"
+                                        className="mt-1 block w-full bg-gray-700 border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <input 
+                                        id="issueAmount" 
+                                        type="number" 
+                                        value={issueAmount}
+                                        onChange={e => setIssueAmount(e.target.value)}
+                                        placeholder="e.g. 500" 
+                                        className="block w-full bg-gray-700 rounded-lg p-3"
+                                    />
+                                    <button 
+                                        onClick={handleIssueSpn} 
+                                        disabled={!isMinter || isLoading}
+                                        className="bg-green-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap disabled:bg-gray-500 disabled:cursor-not-allowed"
+                                    >
                                         {isLoading ? <Spinner/> : (isMinter ? 'Issue SPN' : 'Minter Role Required')}
                                     </button>
                                 </div>
