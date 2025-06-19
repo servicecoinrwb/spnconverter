@@ -469,7 +469,10 @@
                             </div>
                             {/* Customer Userbase */}
                              <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
-                                <h2 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">4. Customer Userbase</h2>
+                                <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                                    <h2 className="text-xl font-bold">4. Customer Userbase</h2>
+                                    <button className="px-4 py-2 bg-gray-600 text-white text-sm font-semibold rounded-md hover:bg-gray-500">Refresh All</button>
+                                </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-sm text-left">
                                         <thead className="text-xs text-gray-400 uppercase bg-gray-700">
@@ -479,29 +482,33 @@
                                                 <th className="px-4 py-3">SRV</th>
                                                 <th className="px-4 py-3">SREV</th>
                                                 <th className="px-4 py-3">USDC</th>
+                                                <th className="px-4 py-3">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr className="border-b border-gray-700">
-                                                <td className="px-4 py-3 font-mono">1003<br/><span className="text-gray-400 text-xs">0x...a6884</span></td>
-                                                <td className="px-4 py-3">1,000</td>
+                                            <tr className="border-b border-gray-700 font-mono">
+                                                <td className="px-4 py-3">1000<br/><span className="text-gray-400 text-xs">0x1cAdCF761E8dd627b372B633C3758856170CbA1F</span></td>
+                                                <td className="px-4 py-3">0</td>
+                                                <td className="px-4 py-3">40.037</td>
+                                                <td className="px-4 py-3">2,897.4</td>
+                                                <td className="px-4 py-3">$0.00</td>
+                                                <td className="px-4 py-3"></td>
+                                            </tr>
+                                            <tr className="border-b border-gray-700 font-mono">
+                                                <td className="px-4 py-3">1001<br/><span className="text-gray-400 text-xs">0x0D093C896F6D37229C912eB841F5BD93156695b3</span></td>
+                                                <td className="px-4 py-3">1,521</td>
                                                 <td className="px-4 py-3">0</td>
                                                 <td className="px-4 py-3">0</td>
                                                 <td className="px-4 py-3">$0.00</td>
+                                                <td className="px-4 py-3"></td>
                                             </tr>
-                                            <tr className="border-b border-gray-700">
-                                                <td className="px-4 py-3 font-mono">1004<br/><span className="text-gray-400 text-xs">0x...C67b2</span></td>
+                                            <tr className="border-b border-gray-700 font-mono">
+                                                <td className="px-4 py-3">1002<br/><span className="text-gray-400 text-xs">0xa9CC31eC558D3C7643828C098b060610785379e3</span></td>
                                                 <td className="px-4 py-3">500</td>
                                                 <td className="px-4 py-3">0</td>
                                                 <td className="px-4 py-3">0</td>
                                                 <td className="px-4 py-3">$0.00</td>
-                                            </tr>
-                                            <tr className="border-b border-gray-700">
-                                                <td className="px-4 py-3 font-mono">1<br/><span className="text-gray-400 text-xs">0x...d1f4557a</span></td>
-                                                <td className="px-4 py-3">0</td>
-                                                <td className="px-4 py-3">970.381</td>
-                                                <td className="px-4 py-3">1,005,505,002</td>
-                                                <td className="px-4 py-3">$120.00</td>
+                                                <td className="px-4 py-3"></td>
                                             </tr>
                                         </tbody>
                                     </table>
