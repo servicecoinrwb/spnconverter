@@ -1,0 +1,448 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+
+// --- Configuration ---
+// The address of your deployed converter contract.
+const CONVERTER_CONTRACT_ADDRESS = "0x524997F5Cf25537a275ad5D0A6A346c733a4fA41";
+// The ABI (Application Binary Interface) for the converter contract.
+const CONVERTER_ABI = [
+    {"inputs":[{"internalType":"address","name":"_spn","type":"address"},{"internalType":"address","name":"_srv","type":"address"},{"internalType":"address","name":"_dao","type":"address"},{"internalType":"uint256","name":"_rate","type":"uint256"}],"stateMutability":"nonpayable","type":"constructor"},
+    {"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"newRate","type":"uint256"}],"name":"ConversionRateUpdated","type":"event"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"spnBurned","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"srvReceived","type":"uint256"}],"name":"Converted","type":"event"},
+    {"inputs":[{"internalType":"uint256","name":"spnAmount","type":"uint256"}],"name":"burnAndConvert","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"conversionRate","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"dao","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"newDao","type":"address"}],"name":"setDAO","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"spn","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"srv","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"uint256","name":"newRate","type":"uint256"}],"name":"updateConversionRate","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawSRV","outputs":[],"stateMutability":"nonpayable","type":"function"}
+];
+// A standard ABI for ERC20 tokens.
+const ERC20_ABI = [
+    "function balanceOf(address account) view returns (uint256)",
+    "function approve(address spender, uint256 amount) returns (bool)",
+    "function transfer(address to, uint256 amount) returns (bool)",
+    "function allowance(address owner, address spender) view returns (uint256)",
+    "function decimals() view returns (uint8)"
+];
+
+// --- Helper Components ---
+
+const Notification = ({ message, type, onClear }) => {
+    if (!message) return null;
+    const colors = {
+        success: 'bg-green-100 border-green-400 text-green-700',
+        error: 'bg-red-100 border-red-400 text-red-700',
+        info: 'bg-blue-100 border-blue-400 text-blue-700'
+    };
+    return (
+        <div className={`fixed top-5 right-5 p-4 border rounded-lg shadow-lg animate-fade-in-down ${colors[type] || 'bg-gray-100'}`} role="alert">
+            <div className="flex">
+                <div className="py-1">
+                    <p className="font-bold">{type.charAt(0).toUpperCase() + type.slice(1)}</p>
+                    <p className="text-sm">{message}</p>
+                </div>
+                <button onClick={onClear} className="ml-4 text-2xl font-semibold leading-none">&times;</button>
+            </div>
+        </div>
+    );
+};
+
+const Spinner = () => (
+    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+);
+
+// --- Main App Component ---
+
+export default function App() {
+    // Ethers.js library readiness
+    const [ethersReady, setEthersReady] = useState(false);
+
+    // Connection and account state
+    const [provider, setProvider] = useState(null);
+    const [signer, setSigner] = useState(null);
+    const [account, setAccount] = useState(null);
+
+    // Contract instances and data
+    const [converterContract, setConverterContract] = useState(null);
+    const [spnContract, setSpnContract] = useState(null);
+    const [srvContract, setSrvContract] = useState(null);
+    const [dao, setDao] = useState(null);
+    const [conversionRate, setConversionRate] = useState(0);
+
+    // User-specific data
+    const [spnBalance, setSpnBalance] = useState('0');
+    const [srvBalance, setSrvBalance] = useState('0');
+    const [spnDecimals, setSpnDecimals] = useState(18);
+    const [srvDecimals, setSrvDecimals] = useState(18);
+    
+    // UI State
+    const [spnAmount, setSpnAmount] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [isDao, setIsDao] = useState(false);
+    const [notification, setNotification] = useState({ message: '', type: '' });
+
+    // --- Effects ---
+    
+    // Effect to load ethers.js library dynamically
+    useEffect(() => {
+        const scriptId = 'ethers-js-script';
+        if (document.getElementById(scriptId) || window.ethers) {
+            setEthersReady(true);
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js';
+        script.async = true;
+        script.onload = () => {
+            setEthersReady(true);
+        };
+        script.onerror = () => {
+            showNotification('Could not load required web3 library.', 'error');
+        };
+        document.body.appendChild(script);
+
+        return () => {
+            const scriptElement = document.getElementById(scriptId);
+            if (scriptElement) {
+                document.body.removeChild(scriptElement);
+            }
+        };
+    }, []);
+
+    // Effect to initialize wallet connection provider when ethers is ready
+    useEffect(() => {
+        if (ethersReady && window.ethereum) {
+            const web3Provider = new window.ethers.providers.Web3Provider(window.ethereum);
+            setProvider(web3Provider);
+        } else if (ethersReady) {
+            showNotification('Please install MetaMask or another web3 wallet.', 'error');
+        }
+    }, [ethersReady]);
+
+    // Effect to handle account changes
+    useEffect(() => {
+        const handleAccountsChanged = (accounts) => {
+            if (accounts.length > 0) {
+                setAccount(accounts[0]);
+            } else {
+                setAccount(null);
+                setSigner(null);
+                setIsDao(false);
+            }
+        };
+
+        if (window.ethereum) {
+            window.ethereum.on('accountsChanged', handleAccountsChanged);
+        }
+
+        return () => {
+            if (window.ethereum) {
+                window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+            }
+        };
+    }, []);
+
+    // Effect to set up contracts and fetch data when account changes
+    useEffect(() => {
+        if (signer && account) {
+            initializeContractsAndData();
+        }
+    }, [signer, account]);
+
+    // Effect to check if the connected account is the DAO
+    useEffect(() => {
+        if (account && dao) {
+            setIsDao(account.toLowerCase() === dao.toLowerCase());
+        } else {
+            setIsDao(false);
+        }
+    }, [account, dao]);
+
+    // --- Functions ---
+    
+    const showNotification = (message, type = 'info', duration = 5000) => {
+        setNotification({ message, type });
+        setTimeout(() => setNotification({ message: '', type: '' }), duration);
+    };
+
+    const connectWallet = async () => {
+        if (!provider) {
+            showNotification('Web3 provider not found. Is MetaMask installed?', 'error');
+            return;
+        }
+        try {
+            const accounts = await provider.send("eth_requestAccounts", []);
+            if (accounts.length > 0) {
+                setAccount(accounts[0]);
+                setSigner(provider.getSigner());
+                showNotification('Wallet connected successfully!', 'success');
+            }
+        } catch (error) {
+            console.error("Failed to connect wallet:", error);
+            showNotification(error.message || 'Failed to connect wallet.', 'error');
+        }
+    };
+
+    const initializeContractsAndData = useCallback(async () => {
+        if (!signer || !window.ethers) return;
+        
+        setIsLoading(true);
+        try {
+            const converter = new window.ethers.Contract(CONVERTER_CONTRACT_ADDRESS, CONVERTER_ABI, signer);
+            setConverterContract(converter);
+
+            const [spnAddress, srvAddress, daoAddress, rate] = await Promise.all([
+                converter.spn(),
+                converter.srv(),
+                converter.dao(),
+                converter.conversionRate()
+            ]);
+
+            const spn = new window.ethers.Contract(spnAddress, ERC20_ABI, signer);
+            const srv = new window.ethers.Contract(srvAddress, ERC20_ABI, signer);
+
+            setSpnContract(spn);
+            setSrvContract(srv);
+            setDao(daoAddress);
+            setConversionRate(rate);
+
+            const [spnBal, srvBal, spnDec, srvDec] = await Promise.all([
+                spn.balanceOf(account),
+                srv.balanceOf(account),
+                spn.decimals(),
+                srv.decimals()
+            ]);
+            
+            setSpnDecimals(spnDec);
+            setSrvDecimals(srvDec);
+            setSpnBalance(window.ethers.utils.formatUnits(spnBal, spnDec));
+            setSrvBalance(window.ethers.utils.formatUnits(srvBal, srvDec));
+
+        } catch (error) {
+            console.error("Initialization failed:", error);
+            showNotification('Failed to load contract data. Are you on the right network?', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [signer, account]);
+
+    const handleConvert = async () => {
+        if (!converterContract || !spnContract || !window.ethers) return;
+
+        if (parseFloat(spnAmount) <= 0 || isNaN(parseFloat(spnAmount))) {
+            showNotification('Please enter a valid amount greater than 0.', 'error');
+            return;
+        }
+        
+        setIsLoading(true);
+        try {
+            const amountInWei = window.ethers.utils.parseUnits(spnAmount, spnDecimals);
+            
+            const allowance = await spnContract.allowance(account, CONVERTER_CONTRACT_ADDRESS);
+            if (allowance.lt(amountInWei)) {
+                showNotification('Approving SPN token spend...', 'info');
+                const approveTx = await spnContract.approve(CONVERTER_CONTRACT_ADDRESS, amountInWei);
+                await approveTx.wait();
+                showNotification('Approval successful! Now converting...', 'success');
+            }
+
+            const convertTx = await converterContract.burnAndConvert(amountInWei);
+            showNotification('Conversion transaction sent... waiting for confirmation.', 'info');
+            await convertTx.wait();
+
+            showNotification('Conversion successful!', 'success');
+            setSpnAmount('');
+            initializeContractsAndData(); 
+        } catch (error) {
+            console.error("Conversion failed:", error);
+            showNotification(error.reason || error.message || 'Conversion failed.', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const AdminPanel = () => {
+        const [newRate, setNewRate] = useState('');
+        const [withdrawAddr, setWithdrawAddr] = useState('');
+        const [withdrawAmt, setWithdrawAmt] = useState('');
+        const [newDaoAddr, setNewDaoAddr] = useState('');
+
+        const handleUpdateRate = async () => {
+            if (!converterContract || !newRate || !window.ethers) return;
+            setIsLoading(true);
+            try {
+                const rateInWei = window.ethers.utils.parseUnits(newRate, 18);
+                const tx = await converterContract.updateConversionRate(rateInWei);
+                await tx.wait();
+                showNotification('Conversion rate updated.', 'success');
+                initializeContractsAndData();
+            } catch (err) {
+                showNotification(err.reason || 'Failed to update rate.', 'error');
+            }
+            setIsLoading(false);
+        };
+        
+        const handleWithdraw = async () => {
+            if (!converterContract || !withdrawAddr || !withdrawAmt || !window.ethers) return;
+            setIsLoading(true);
+            try {
+                const amountInWei = window.ethers.utils.parseUnits(withdrawAmt, srvDecimals);
+                const tx = await converterContract.withdrawSRV(withdrawAddr, amountInWei);
+                await tx.wait();
+                showNotification('SRV withdrawn successfully.', 'success');
+                initializeContractsAndData();
+            } catch (err) {
+                showNotification(err.reason || 'Withdraw failed.', 'error');
+            }
+            setIsLoading(false);
+        };
+        
+        const handleSetDao = async () => {
+             if (!converterContract || !newDaoAddr) return;
+            setIsLoading(true);
+            try {
+                const tx = await converterContract.setDAO(newDaoAddr);
+                await tx.wait();
+                showNotification('DAO address updated.', 'success');
+                initializeContractsAndData();
+            } catch (err) {
+                showNotification(err.reason || 'Failed to set new DAO.', 'error');
+            }
+            setIsLoading(false);
+        };
+
+        return (
+            <div className="mt-8 p-6 bg-gray-700 rounded-xl space-y-6">
+                <h3 className="text-xl font-bold text-center text-yellow-400">DAO Admin Panel</h3>
+                {/* Update Rate */}
+                <div className="space-y-2">
+                    <label className="block text-sm font-medium">Update Conversion Rate</label>
+                    <div className="flex space-x-2">
+                        <input type="text" value={newRate} onChange={e => setNewRate(e.target.value)} placeholder="e.g., 0.5268" className="w-full bg-gray-800 border-gray-600 rounded-md p-2 focus:ring-yellow-500 focus:border-yellow-500"/>
+                        <button onClick={handleUpdateRate} disabled={isLoading} className="px-4 py-2 bg-yellow-500 text-black font-semibold rounded-md hover:bg-yellow-600 disabled:bg-gray-500 flex items-center justify-center">
+                            {isLoading ? <Spinner /> : "Update"}
+                        </button>
+                    </div>
+                </div>
+                {/* Withdraw SRV */}
+                 <div className="space-y-2">
+                    <label className="block text-sm font-medium">Withdraw SRV</label>
+                    <input type="text" value={withdrawAddr} onChange={e => setWithdrawAddr(e.target.value)} placeholder="Recipient Address" className="w-full bg-gray-800 border-gray-600 rounded-md p-2 mb-2"/>
+                    <div className="flex space-x-2">
+                        <input type="text" value={withdrawAmt} onChange={e => setWithdrawAmt(e.target.value)} placeholder="Amount of SRV" className="w-full bg-gray-800 border-gray-600 rounded-md p-2"/>
+                        <button onClick={handleWithdraw} disabled={isLoading} className="px-4 py-2 bg-yellow-500 text-black font-semibold rounded-md hover:bg-yellow-600 disabled:bg-gray-500 flex items-center justify-center">
+                           {isLoading ? <Spinner /> : "Withdraw"}
+                        </button>
+                    </div>
+                </div>
+                {/* Set DAO */}
+                <div className="space-y-2">
+                    <label className="block text-sm font-medium">Set New DAO</label>
+                    <div className="flex space-x-2">
+                        <input type="text" value={newDaoAddr} onChange={e => setNewDaoAddr(e.target.value)} placeholder="New DAO Address" className="w-full bg-gray-800 border-gray-600 rounded-md p-2"/>
+                        <button onClick={handleSetDao} disabled={isLoading} className="px-4 py-2 bg-yellow-500 text-black font-semibold rounded-md hover:bg-yellow-600 disabled:bg-gray-500 flex items-center justify-center">
+                            {isLoading ? <Spinner /> : "Set DAO"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )
+    };
+
+    const srvToReceive = useMemo(() => {
+        if (!spnAmount || !conversionRate || isNaN(parseFloat(spnAmount)) || !window.ethers) {
+            return '0';
+        }
+        try {
+            const spnWei = window.ethers.utils.parseUnits(spnAmount, spnDecimals);
+            const srvWei = spnWei.mul(conversionRate).div(window.ethers.utils.parseUnits("1", 18));
+            return window.ethers.utils.formatUnits(srvWei, srvDecimals);
+        } catch {
+            return '0';
+        }
+    }, [spnAmount, conversionRate, spnDecimals, srvDecimals]);
+
+
+    // --- Render ---
+    return (
+        <div className="min-h-screen bg-gray-900 text-white font-sans flex flex-col items-center justify-center p-4">
+            <Notification message={notification.message} type={notification.type} onClear={() => setNotification({ message: '', type: '' })} />
+
+            <div className="w-full max-w-md bg-gray-800 rounded-xl shadow-2xl p-8">
+                <div className="text-center mb-6">
+                    <h1 className="text-3xl font-bold text-cyan-400">SPN to SRV Converter</h1>
+                    <p className="text-gray-400 mt-2">A decentralized token conversion utility</p>
+                    <a href={`https://arbiscan.io/address/${CONVERTER_CONTRACT_ADDRESS}`} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 hover:text-cyan-400 break-all">{CONVERTER_CONTRACT_ADDRESS}</a>
+                </div>
+
+                {!account ? (
+                    <button onClick={connectWallet} disabled={!ethersReady} className="w-full py-3 px-4 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-600 transition-colors duration-300 disabled:bg-gray-600 disabled:cursor-wait">
+                        {ethersReady ? "Connect Wallet" : "Loading..."}
+                    </button>
+                ) : (
+                    <div className="space-y-6">
+                        {/* Account Info */}
+                        <div>
+                            <div className="bg-gray-700 rounded-lg p-4">
+                               <p className="text-sm text-gray-400">Connected Account</p>
+                               <p className="text-md font-mono break-all">{account}</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 mt-4 text-center">
+                               <div className="bg-gray-700 p-3 rounded-lg">
+                                   <p className="text-sm text-gray-400">SPN Balance</p>
+                                   <p className="text-lg font-semibold">{parseFloat(spnBalance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</p>
+                               </div>
+                               <div className="bg-gray-700 p-3 rounded-lg">
+                                   <p className="text-sm text-gray-400">SRV Balance</p>
+                                   <p className="text-lg font-semibold">{parseFloat(srvBalance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</p>
+                               </div>
+                            </div>
+                        </div>
+
+                        {/* Conversion Form */}
+                        <div className="space-y-4">
+                             <div className="text-center bg-gray-900/50 p-2 rounded-md">
+                                <p className="text-sm text-gray-300">Conversion Rate: <span className="font-bold text-cyan-400">1 SPN = {ethersReady ? window.ethers.utils.formatUnits(conversionRate, 18) : '...'} SRV</span></p>
+                            </div>
+                            <div>
+                                <label htmlFor="spn-amount" className="block text-sm font-medium text-gray-300 mb-1">Amount of SPN to Convert</label>
+                                <div className="relative">
+                                    <input
+                                        id="spn-amount"
+                                        type="number"
+                                        value={spnAmount}
+                                        onChange={(e) => setSpnAmount(e.target.value)}
+                                        placeholder="0.0"
+                                        className="w-full bg-gray-900 border-gray-600 rounded-lg p-3 text-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="text-center text-gray-400">
+                                <p>You will receive approximately:</p>
+                                <p className="text-xl font-bold text-white">{parseFloat(srvToReceive).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 6})} SRV</p>
+                            </div>
+
+                            <button
+                                onClick={handleConvert}
+                                disabled={isLoading || !spnAmount || parseFloat(spnAmount) <= 0}
+                                className="w-full py-3 px-4 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-600 transition-colors duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center"
+                            >
+                                {isLoading ? <Spinner /> : "Approve & Convert"}
+                            </button>
+                        </div>
+                        
+                        {isDao && <AdminPanel />}
+                    </div>
+                )}
+            </div>
+             <footer className="text-center mt-8 text-gray-500 text-sm">
+                <p>Ensure your wallet is connected to the correct network (e.g., Arbitrum).</p>
+                <p>This is a decentralized application. All transactions are final.</p>
+            </footer>
+        </div>
+    );
+}
