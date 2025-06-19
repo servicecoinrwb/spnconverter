@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Service Point Network</title>
+    <title>SPN to SRV Converter</title>
     
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -46,8 +46,6 @@
 
         // --- Configuration ---
         const CONVERTER_CONTRACT_ADDRESS = "0x524997F5Cf25537a275ad5D0A6A346c733a4fA41";
-        const SPN_TOKEN_ADDRESS = "0x29950E3186999F490777f00d97279a62b2dD1818";
-
         const CONVERTER_ABI = [
             {"inputs":[{"internalType":"address","name":"_spn","type":"address"},{"internalType":"address","name":"_srv","type":"address"},{"internalType":"address","name":"_dao","type":"address"},{"internalType":"uint256","name":"_rate","type":"uint256"}],"stateMutability":"nonpayable","type":"constructor"},
             {"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"newRate","type":"uint256"}],"name":"ConversionRateUpdated","type":"event"},
@@ -61,16 +59,12 @@
             {"inputs":[{"internalType":"uint256","name":"newRate","type":"uint256"}],"name":"updateConversionRate","outputs":[],"stateMutability":"nonpayable","type":"function"},
             {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawSRV","outputs":[],"stateMutability":"nonpayable","type":"function"}
         ];
-        
-        const SPN_TOKEN_ABI = [{"inputs":[{"internalType":"address","name":"admin","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Paused","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"SPNMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Unpaused","type":"event"},{"inputs":[],"name":"DEFAULT_ADMIN_ROLE","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MINTER_ROLE","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"hasRole","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"unpause","outputs":[],"stateMutability":"nonpayable","type":"function"}];
-        
         const ERC20_ABI = [
             "function balanceOf(address account) view returns (uint256)",
             "function approve(address spender, uint256 amount) returns (bool)",
             "function transfer(address to, uint256 amount) returns (bool)",
             "function allowance(address owner, address spender) view returns (uint256)",
-            "function decimals() view returns (uint8)",
-            "function totalSupply() view returns (uint256)"
+            "function decimals() view returns (uint8)"
         ];
 
         // --- Helper Components ---
@@ -82,7 +76,7 @@
                 info: 'bg-blue-100 border-blue-400 text-blue-700'
             };
             return (
-                <div className={`fixed top-20 right-5 p-4 border rounded-lg shadow-lg animate-fade-in-down z-50 ${colors[type] || 'bg-gray-100'}`} role="alert">
+                <div className={`fixed top-5 right-5 p-4 border rounded-lg shadow-lg animate-fade-in-down ${colors[type] || 'bg-gray-100'}`} role="alert">
                     <div className="flex">
                         <div className="py-1">
                             <p className="font-bold">{type.charAt(0).toUpperCase() + type.slice(1)}</p>
@@ -97,43 +91,96 @@
         const Spinner = () => (
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
         );
-        
-        // --- Page Components ---
 
-        function ConverterPage({ account, provider, signer, showNotification }) {
+        // --- Main App Component ---
+        function App() {
+            // Connection and account state
+            const [provider, setProvider] = useState(null);
+            const [signer, setSigner] = useState(null);
+            const [account, setAccount] = useState(null);
+
+            // Contract instances and data
             const [converterContract, setConverterContract] = useState(null);
             const [spnContract, setSpnContract] = useState(null);
             const [srvContract, setSrvContract] = useState(null);
+            const [dao, setDao] = useState(null);
             const [conversionRate, setConversionRate] = useState(0);
 
-            // Balances and supply data
+            // User-specific data
             const [spnBalance, setSpnBalance] = useState('0');
             const [srvBalance, setSrvBalance] = useState('0');
-            const [spnTotalSupply, setSpnTotalSupply] = useState('0');
-            const [converterSrvBalance, setConverterSrvBalance] = useState('0');
-
             const [spnDecimals, setSpnDecimals] = useState(18);
             const [srvDecimals, setSrvDecimals] = useState(18);
             
+            // UI State
             const [spnAmount, setSpnAmount] = useState('');
             const [isLoading, setIsLoading] = useState(false);
             const [isDao, setIsDao] = useState(false);
-            const [daoAddress, setDaoAddress] = useState(null);
+            const [notification, setNotification] = useState({ message: '', type: '' });
 
-             useEffect(() => {
+            // --- Effects ---
+            useEffect(() => {
+                if (window.ethereum) {
+                    const web3Provider = new window.ethers.providers.Web3Provider(window.ethereum);
+                    setProvider(web3Provider);
+
+                    const handleAccountsChanged = (accounts) => {
+                        if (accounts.length > 0) {
+                            setAccount(accounts[0]);
+                        } else {
+                            setAccount(null);
+                            setSigner(null);
+                            setIsDao(false);
+                        }
+                    };
+
+                    window.ethereum.on('accountsChanged', handleAccountsChanged);
+
+                    return () => {
+                        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+                    };
+                } else {
+                    showNotification('Please install MetaMask or another web3 wallet.', 'error');
+                }
+            }, []);
+
+            useEffect(() => {
                 if (signer && account) {
                     initializeContractsAndData();
                 }
             }, [signer, account]);
-            
+
             useEffect(() => {
-                if (account && daoAddress) {
-                    setIsDao(account.toLowerCase() === daoAddress.toLowerCase());
+                if (account && dao) {
+                    setIsDao(account.toLowerCase() === dao.toLowerCase());
                 } else {
                     setIsDao(false);
                 }
-            }, [account, daoAddress]);
+            }, [account, dao]);
 
+            // --- Functions ---
+            const showNotification = (message, type = 'info', duration = 5000) => {
+                setNotification({ message, type });
+                setTimeout(() => setNotification({ message: '', type: '' }), duration);
+            };
+
+            const connectWallet = async () => {
+                if (!provider) {
+                    showNotification('Web3 provider not found. Is MetaMask installed?', 'error');
+                    return;
+                }
+                try {
+                    const accounts = await provider.send("eth_requestAccounts", []);
+                    if (accounts.length > 0) {
+                        setAccount(accounts[0]);
+                        setSigner(provider.getSigner());
+                        showNotification('Wallet connected successfully!', 'success');
+                    }
+                } catch (error) {
+                    console.error("Failed to connect wallet:", error);
+                    showNotification(error.message || 'Failed to connect wallet.', 'error');
+                }
+            };
 
             const initializeContractsAndData = useCallback(async () => {
                 if (!signer || !window.ethers) return;
@@ -143,40 +190,36 @@
                     const converter = new window.ethers.Contract(CONVERTER_CONTRACT_ADDRESS, CONVERTER_ABI, signer);
                     setConverterContract(converter);
 
-                    const [spnAddr, srvAddr, daoAddr, rate] = await Promise.all([
+                    const [spnAddress, srvAddress, daoAddress, rate] = await Promise.all([
                         converter.spn(),
                         converter.srv(),
                         converter.dao(),
                         converter.conversionRate()
                     ]);
-                    setDaoAddress(daoAddr);
 
-                    const spn = new window.ethers.Contract(spnAddr, ERC20_ABI, signer);
-                    const srv = new window.ethers.Contract(srvAddr, ERC20_ABI, signer);
+                    const spn = new window.ethers.Contract(spnAddress, ERC20_ABI, signer);
+                    const srv = new window.ethers.Contract(srvAddress, ERC20_ABI, signer);
+
                     setSpnContract(spn);
                     setSrvContract(srv);
+                    setDao(daoAddress);
                     setConversionRate(rate);
 
-                    const [spnBal, srvBal, spnDec, srvDec, spnSupply, converterSrvBal] = await Promise.all([
+                    const [spnBal, srvBal, spnDec, srvDec] = await Promise.all([
                         spn.balanceOf(account),
                         srv.balanceOf(account),
                         spn.decimals(),
-                        srv.decimals(),
-                        spn.totalSupply(),
-                        srv.balanceOf(CONVERTER_CONTRACT_ADDRESS)
+                        srv.decimals()
                     ]);
                     
                     setSpnDecimals(spnDec);
                     setSrvDecimals(srvDec);
                     setSpnBalance(window.ethers.utils.formatUnits(spnBal, spnDec));
                     setSrvBalance(window.ethers.utils.formatUnits(srvBal, srvDec));
-                    setSpnTotalSupply(window.ethers.utils.formatUnits(spnSupply, spnDec));
-                    setConverterSrvBalance(window.ethers.utils.formatUnits(converterSrvBal, srvDec));
-
 
                 } catch (error) {
                     console.error("Initialization failed:", error);
-                    showNotification('Failed to load converter data. Are you on the right network?', 'error');
+                    showNotification('Failed to load contract data. Are you on the right network?', 'error');
                 } finally {
                     setIsLoading(false);
                 }
@@ -185,7 +228,7 @@
             const handleConvert = async () => {
                 if (!converterContract || !spnContract || !window.ethers) return;
                 if (parseFloat(spnAmount) <= 0 || isNaN(parseFloat(spnAmount))) {
-                    showNotification('Please enter a valid amount > 0.', 'error');
+                    showNotification('Please enter a valid amount greater than 0.', 'error');
                     return;
                 }
                 
@@ -218,7 +261,6 @@
                 const [withdrawAddr, setWithdrawAddr] = useState('');
                 const [withdrawAmt, setWithdrawAmt] = useState('');
                 const [newDaoAddr, setNewDaoAddr] = useState('');
-                const [depositSrvAmount, setDepositSrvAmount] = useState('');
 
                 const handleUpdateRate = async () => {
                     if (!converterContract || !newRate || !window.ethers) return;
@@ -267,42 +309,9 @@
                     }
                 };
 
-                const handleDepositSrv = async () => {
-                    if (!srvContract || !depositSrvAmount || parseFloat(depositSrvAmount) <= 0 || !window.ethers) {
-                        showNotification('Please enter a valid amount to deposit.', 'error');
-                        return;
-                    }
-                    setIsLoading(true);
-                    try {
-                        const amountInWei = window.ethers.utils.parseUnits(depositSrvAmount, srvDecimals);
-                        // The DAO simply transfers SRV to the converter contract address
-                        const tx = await srvContract.transfer(CONVERTER_CONTRACT_ADDRESS, amountInWei);
-                        showNotification('Deposit transaction sent...', 'info');
-                        await tx.wait();
-                        showNotification('SRV deposited successfully!', 'success');
-                        setDepositSrvAmount('');
-                        initializeContractsAndData(); // Refresh data
-                    } catch(err) {
-                        showNotification(err.reason || 'Failed to deposit SRV.', 'error');
-                    } finally {
-                        setIsLoading(false);
-                    }
-                };
-
                 return (
                     <div className="mt-8 p-6 bg-gray-700 rounded-xl space-y-6">
                         <h3 className="text-xl font-bold text-center text-yellow-400">DAO Admin Panel</h3>
-                        {/* Deposit SRV */}
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium">Deposit SRV to Converter</label>
-                            <div className="flex space-x-2">
-                                <input type="text" value={depositSrvAmount} onChange={e => setDepositSrvAmount(e.target.value)} placeholder="Amount of SRV" className="w-full bg-gray-800 border-gray-600 rounded-md p-2"/>
-                                <button onClick={handleDepositSrv} disabled={isLoading} className="px-4 py-2 bg-blue-500 text-black font-semibold rounded-md hover:bg-blue-600 disabled:bg-gray-500 flex items-center justify-center">
-                                   {isLoading ? <Spinner /> : "Deposit"}
-                                </button>
-                            </div>
-                        </div>
-                        {/* Update Rate */}
                         <div className="space-y-2">
                             <label className="block text-sm font-medium">Update Conversion Rate</label>
                             <div className="flex space-x-2">
@@ -312,9 +321,8 @@
                                 </button>
                             </div>
                         </div>
-                         {/* Withdraw SRV */}
                          <div className="space-y-2">
-                            <label className="block text-sm font-medium">Withdraw SRV from Converter</label>
+                            <label className="block text-sm font-medium">Withdraw SRV</label>
                             <input type="text" value={withdrawAddr} onChange={e => setWithdrawAddr(e.target.value)} placeholder="Recipient Address" className="w-full bg-gray-800 border-gray-600 rounded-md p-2 mb-2"/>
                             <div className="flex space-x-2">
                                 <input type="text" value={withdrawAmt} onChange={e => setWithdrawAmt(e.target.value)} placeholder="Amount of SRV" className="w-full bg-gray-800 border-gray-600 rounded-md p-2"/>
@@ -323,7 +331,6 @@
                                 </button>
                             </div>
                         </div>
-                        {/* Set DAO */}
                         <div className="space-y-2">
                             <label className="block text-sm font-medium">Set New DAO</label>
                             <div className="flex space-x-2">
@@ -350,35 +357,34 @@
                 }
             }, [spnAmount, conversionRate, spnDecimals, srvDecimals]);
 
-
             return (
-                 <div className="w-full max-w-md bg-gray-800 rounded-xl shadow-2xl p-8 text-white">
+                <div className="min-h-screen font-sans flex flex-col items-center justify-center p-4">
+                    <Notification message={notification.message} type={notification.type} onClear={() => setNotification({ message: '', type: '' })} />
+                    <div className="w-full max-w-md bg-gray-800 rounded-xl shadow-2xl p-8 text-white">
                         <div className="text-center mb-6">
                             <h1 className="text-3xl font-bold text-cyan-400">SPN to SRV Converter</h1>
                             <p className="text-gray-400 mt-2">A decentralized token conversion utility</p>
                             <a href={`https://arbiscan.io/address/${CONVERTER_CONTRACT_ADDRESS}`} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 hover:text-cyan-400 break-all">{CONVERTER_CONTRACT_ADDRESS}</a>
                         </div>
-                        
-                        <div className="space-y-6">
+                        {!account ? (
+                            <button onClick={connectWallet} disabled={!provider} className="w-full py-3 px-4 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-600 transition-colors duration-300 disabled:bg-gray-600 disabled:cursor-wait">
+                                {provider ? "Connect Wallet" : "Loading..."}
+                            </button>
+                        ) : (
+                            <div className="space-y-6">
                                 <div>
-                                    <div className="grid grid-cols-2 gap-4 mt-2 text-center">
-                                       <div className="bg-gray-700 p-3 rounded-lg">
-                                           <p className="text-sm text-gray-400">Your SPN Balance</p>
-                                           <p className="text-lg font-semibold">{parseFloat(spnBalance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</p>
-                                       </div>
-                                       <div className="bg-gray-700 p-3 rounded-lg">
-                                           <p className="text-sm text-gray-400">Your SRV Balance</p>
-                                           <p className="text-lg font-semibold">{parseFloat(srvBalance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</p>
-                                       </div>
+                                    <div className="bg-gray-700 rounded-lg p-4">
+                                       <p className="text-sm text-gray-400">Connected Account</p>
+                                       <p className="text-md font-mono break-all">{account}</p>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4 mt-4 text-center">
                                        <div className="bg-gray-700 p-3 rounded-lg">
-                                           <p className="text-sm text-gray-400">Circulating SPN</p>
-                                           <p className="text-lg font-semibold">{parseFloat(spnTotalSupply).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}</p>
+                                           <p className="text-sm text-gray-400">SPN Balance</p>
+                                           <p className="text-lg font-semibold">{parseFloat(spnBalance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</p>
                                        </div>
                                        <div className="bg-gray-700 p-3 rounded-lg">
-                                           <p className="text-sm text-gray-400">Converter SRV Balance</p>
-                                           <p className="text-lg font-semibold">{parseFloat(converterSrvBalance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</p>
+                                           <p className="text-sm text-gray-400">SRV Balance</p>
+                                           <p className="text-lg font-semibold">{parseFloat(srvBalance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</p>
                                        </div>
                                     </div>
                                 </div>
@@ -388,14 +394,16 @@
                                     </div>
                                     <div>
                                         <label htmlFor="spn-amount" className="block text-sm font-medium text-gray-300 mb-1">Amount of SPN to Convert</label>
-                                        <input
-                                            id="spn-amount"
-                                            type="number"
-                                            value={spnAmount}
-                                            onChange={(e) => setSpnAmount(e.target.value)}
-                                            placeholder="0.0"
-                                            className="w-full bg-gray-900 border-gray-600 rounded-lg p-3 text-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                id="spn-amount"
+                                                type="number"
+                                                value={spnAmount}
+                                                onChange={(e) => setSpnAmount(e.target.value)}
+                                                placeholder="0.0"
+                                                className="w-full bg-gray-900 border-gray-600 rounded-lg p-3 text-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                                            />
+                                        </div>
                                     </div>
                                     <div className="text-center text-gray-400">
                                         <p>You will receive approximately:</p>
@@ -411,304 +419,12 @@
                                 </div>
                                 {isDao && <AdminPanel />}
                             </div>
-                    </div>
-            )
-        }
-        
-        const initialCustomers = [
-            { id: 1000, address: '0x1cAdCF761E8dd627b372B633C3758856170CbA1F', spn: 0, srv: 40.037, srev: '2,897.4', usdc: '$0.00' },
-            { id: 1001, address: '0x0D093C896F6D37229C912eB841F5BD93156695b3', spn: 1521, srv: 0, srev: '0', usdc: '$0.00' },
-            { id: 1002, address: '0xa9CC31eC558D3C7643828C098b060610785379e3', spn: 500, srv: 0, srev: '0', usdc: '$0.00' },
-        ];
-
-        function AdminPortalPage({ account, signer, showNotification }) {
-            const [customers, setCustomers] = useState(initialCustomers);
-            const [isLoading, setIsLoading] = useState(false);
-            
-            // State for contract addresses
-            const [contractAddresses, setContractAddresses] = useState({ spn: SPN_TOKEN_ADDRESS, srv: '', converter: CONVERTER_CONTRACT_ADDRESS });
-
-            // State for "Add Customer" inputs
-            const [newCustomerId, setNewCustomerId] = useState('');
-            const [newCustomerAddress, setNewCustomerAddress] = useState('');
-
-            // State for "Issue SPN" inputs
-            const [issueAddress, setIssueAddress] = useState('');
-            const [issueAmount, setIssueAmount] = useState('');
-            const [isMinter, setIsMinter] = useState(false);
-
-            // Fetch contract addresses and check for minter role
-            useEffect(() => {
-                const initAdminData = async () => {
-                    if (!signer || !account) return;
-                    try {
-                        // Check Minter Role
-                        const spnContract = new window.ethers.Contract(SPN_TOKEN_ADDRESS, SPN_TOKEN_ABI, signer);
-                        const minterRole = await spnContract.MINTER_ROLE();
-                        const hasMinterRole = await spnContract.hasRole(minterRole, account);
-                        setIsMinter(hasMinterRole);
-
-                        // Fetch addresses from Converter
-                        const converter = new window.ethers.Contract(CONVERTER_CONTRACT_ADDRESS, CONVERTER_ABI, signer);
-                        const srvAddr = await converter.srv();
-                        setContractAddresses(prev => ({ ...prev, spn: SPN_TOKEN_ADDRESS, srv: srvAddr }));
-
-                    } catch(err) {
-                        console.error("Error fetching admin data:", err);
-                        showNotification('Could not fetch admin contract data.', 'error');
-                    }
-                };
-                initAdminData();
-            }, [signer, account]);
-
-
-            const handleRefresh = () => {
-                setIsLoading(true);
-                showNotification('Refreshing customer data...', 'info');
-                // Simulate a network request
-                setTimeout(() => {
-                    setCustomers(initialCustomers);
-                    setIsLoading(false);
-                    showNotification('Customer data refreshed!', 'success');
-                }, 1000);
-            };
-
-            const handleEraseUser = (customerId) => {
-                setCustomers(currentCustomers => currentCustomers.filter(customer => customer.id !== customerId));
-                showNotification(`Customer ${customerId} removed.`, 'success');
-            };
-            
-            const handleAddCustomer = () => {
-                if (!newCustomerId || !newCustomerAddress) {
-                    showNotification('Please enter a Customer # and Address.', 'error');
-                    return;
-                }
-                const newCustomer = {
-                    id: newCustomerId,
-                    address: newCustomerAddress,
-                    spn: 0,
-                    srv: 0,
-                    srev: '0',
-                    usdc: '$0.00',
-                };
-                setCustomers(currentCustomers => [newCustomer, ...currentCustomers]);
-                showNotification(`Customer ${newCustomerId} added successfully.`, 'success');
-                setNewCustomerId('');
-                setNewCustomerAddress('');
-            };
-
-            const handleIssueSpn = async () => {
-                if (!issueAddress || !issueAmount || parseFloat(issueAmount) <= 0) {
-                    showNotification('Please enter a valid address and amount > 0.', 'error');
-                    return;
-                }
-                 if (!signer || !isMinter) {
-                    showNotification('You do not have permission to mint tokens.', 'error');
-                    return;
-                }
-                setIsLoading(true);
-                try {
-                    const spnContract = new window.ethers.Contract(SPN_TOKEN_ADDRESS, SPN_TOKEN_ABI, signer);
-                    const amountInWei = window.ethers.utils.parseUnits(issueAmount, 18); // SPN has 18 decimals
-                    const tx = await spnContract.mint(issueAddress, amountInWei);
-                    showNotification('Mint transaction sent...', 'info');
-                    await tx.wait();
-                    showNotification(`${issueAmount} SPN minted to ${issueAddress.substring(0,6)}...`, 'success');
-                    setIssueAddress('');
-                    setIssueAmount('');
-                } catch(err) {
-                    console.error("SPN Minting failed:", err);
-                    showNotification(err.reason || 'SPN Minting failed.', 'error');
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-
-
-            return (
-                <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 text-white">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Left Column */}
-                        <div className="lg:col-span-1 space-y-6">
-                            {/* System Configuration */}
-                            <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
-                                <h2 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">1. System Configuration</h2>
-                                <div className="space-y-2 text-sm break-all">
-                                    <p>SPN Token: <a href={`https://arbiscan.io/address/${contractAddresses.spn}`} target="_blank" className="text-cyan-400 hover:underline">{contractAddresses.spn}</a></p>
-                                    <p>SRV Token: <a href={`https://arbiscan.io/address/${contractAddresses.srv}`} target="_blank" className="text-cyan-400 hover:underline">{contractAddresses.srv}</a></p>
-                                    <p>Converter: <a href={`https://arbiscan.io/address/${contractAddresses.converter}`} target="_blank" className="text-cyan-400 hover:underline">{contractAddresses.converter}</a></p>
-                                </div>
-                            </div>
-                            {/* Transaction Log */}
-                            <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
-                                 <h2 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">Transaction Log</h2>
-                                 <div className="text-xs space-y-2 font-mono h-48 overflow-y-auto">
-                                    <p>[1:35:55 PM] All balances updated.</p>
-                                    <p>[1:35:51 PM] Refreshing all customer balances...</p>
-                                    <p>[1:24:28 PM] All balances updated.</p>
-                                    <p>[1:24:28 PM] All balances updated.</p>
-                                    <p>[1:24:25 PM] Refreshing all customer balances...</p>
-                                    <p>[1:24:23 PM] Refreshing all customer balances...</p>
-                                    <p>[1:24:23 PM] Wallet 0xcfe0... connected.</p>
-                                 </div>
-                            </div>
-                        </div>
-
-                        {/* Right Column */}
-                        <div className="lg:col-span-2 space-y-6">
-                             {/* Add Customer */}
-                             <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
-                                <h2 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">2. Add Customer to Dashboard</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                    <input type="text" value={newCustomerId} onChange={e => setNewCustomerId(e.target.value)} placeholder="e.g. 1003" className="md:col-span-1 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
-                                    <input type="text" value={newCustomerAddress} onChange={e => setNewCustomerAddress(e.target.value)} placeholder="0x..." className="md:col-span-1 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
-                                    <button onClick={handleAddCustomer} className="md:col-span-1 w-full py-3 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-600">Add Customer</button>
-                                </div>
-                            </div>
-                            {/* Issue SPN */}
-                            <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
-                                <h2 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">3. Admin: Issue SPN (Points)</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                    <input type="text" value={issueAddress} onChange={e => setIssueAddress(e.target.value)} placeholder="Enter wallet address to issue tokens to" className="md:col-span-2 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
-                                    <input type="text" value={issueAmount} onChange={e => setIssueAmount(e.target.value)} placeholder="e.g. 500" className="md:col-span-1 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
-                                    <button onClick={handleIssueSpn} disabled={!isMinter || isLoading} className="md:col-span-3 w-full mt-2 py-3 bg-green-500 text-black font-bold rounded-lg hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center">
-                                        {isLoading ? <Spinner/> : (isMinter ? 'Issue SPN' : 'Minter Role Required')}
-                                    </button>
-                                </div>
-                            </div>
-                            {/* Customer Userbase */}
-                             <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
-                                <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
-                                    <h2 className="text-xl font-bold">4. Customer Userbase</h2>
-                                    <button onClick={handleRefresh} disabled={isLoading} className="px-4 py-2 bg-gray-600 text-white text-sm font-semibold rounded-md hover:bg-gray-500 disabled:bg-gray-700 disabled:cursor-wait flex items-center">
-                                        {isLoading ? <Spinner/> : 'Refresh All'}
-                                    </button>
-                                </div>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-sm text-left">
-                                        <thead className="text-xs text-gray-400 uppercase bg-gray-700">
-                                            <tr>
-                                                <th className="px-4 py-3">Customer</th>
-                                                <th className="px-4 py-3">SPN</th>
-                                                <th className="px-4 py-3">SRV</th>
-                                                <th className="px-4 py-3">SREV</th>
-                                                <th className="px-4 py-3">USDC</th>
-                                                <th className="px-4 py-3 text-center">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {customers.map((customer) => (
-                                                <tr key={customer.id} className="border-b border-gray-700 font-mono">
-                                                    <td className="px-4 py-3">{customer.id}<br/><span className="text-gray-400 text-xs">{customer.address}</span></td>
-                                                    <td className="px-4 py-3">{customer.spn}</td>
-                                                    <td className="px-4 py-3">{customer.srv}</td>
-                                                    <td className="px-4 py-3">{customer.srev}</td>
-                                                    <td className="px-4 py-3">{customer.usdc}</td>
-                                                    <td className="px-4 py-3 text-center">
-                                                        <button onClick={() => handleEraseUser(customer.id)} className="text-red-500 hover:text-red-400 text-xl font-bold">&times;</button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-
-        // --- Main App Component (Router) ---
-        function App() {
-            const [page, setPage] = useState('admin'); // Default page
-            const [provider, setProvider] = useState(null);
-            const [signer, setSigner] = useState(null);
-            const [account, setAccount] = useState(null);
-            const [notification, setNotification] = useState({ message: '', type: '' });
-
-            useEffect(() => {
-                if (window.ethereum) {
-                    const web3Provider = new window.ethers.providers.Web3Provider(window.ethereum);
-                    setProvider(web3Provider);
-
-                    const handleAccountsChanged = (accounts) => {
-                         if (accounts.length > 0) {
-                            connectWallet(web3Provider);
-                        } else {
-                            setAccount(null);
-                            setSigner(null);
-                        }
-                    };
-                    window.ethereum.on('accountsChanged', handleAccountsChanged);
-                    return () => window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-                }
-            }, []);
-            
-            const showNotification = (message, type = 'info', duration = 5000) => {
-                setNotification({ message, type });
-                setTimeout(() => setNotification({ message: '', type: '' }), duration);
-            };
-
-            const connectWallet = async (p = provider) => {
-                if (!p) {
-                    showNotification('Web3 provider not found. Is MetaMask installed?', 'error');
-                    return;
-                }
-                try {
-                    const accounts = await p.send("eth_requestAccounts", []);
-                    if (accounts.length > 0) {
-                        setAccount(accounts[0]);
-                        setSigner(p.getSigner());
-                        showNotification('Wallet connected successfully!', 'success');
-                    }
-                } catch (error) {
-                    console.error("Failed to connect wallet:", error);
-                    showNotification(error.message || 'Failed to connect wallet.', 'error');
-                }
-            };
-            
-            const NavButton = ({ targetPage, children }) => (
-                <button 
-                    onClick={() => setPage(targetPage)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${page === targetPage ? 'bg-cyan-500 text-black' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
-                >
-                    {children}
-                </button>
-            );
-
-            return (
-                <div className="min-h-screen font-sans flex flex-col p-4">
-                    <Notification message={notification.message} type={notification.type} onClear={() => setNotification({ message: '', type: '' })} />
-                    
-                    {/* Header Navigation */}
-                    <header className="w-full bg-gray-800 shadow-lg rounded-xl p-4 mb-6 flex justify-between items-center">
-                        <h1 className="text-xl font-bold text-white">Service Point Network</h1>
-                        <nav className="flex items-center space-x-4">
-                            <NavButton targetPage="admin">Admin Portal</NavButton>
-                            <NavButton targetPage="converter">Converter</NavButton>
-                             {!account ? (
-                                <button onClick={() => connectWallet()} className="px-4 py-2 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-600 transition-colors duration-300">
-                                    Connect Wallet
-                                </button>
-                            ) : (
-                                <div className="px-4 py-2 bg-gray-700 rounded-lg text-xs text-green-400 font-mono">
-                                    Connected: {account.substring(0,6)}...{account.substring(account.length - 4)}
-                                </div>
-                            )}
-                        </nav>
-                    </header>
-
-                    {/* Page Content */}
-                    <main className="flex-grow flex items-center justify-center">
-                        {page === 'admin' && <AdminPortalPage account={account} signer={signer} showNotification={showNotification} />}
-                        {page === 'converter' && (
-                            account ? 
-                                <ConverterPage account={account} provider={provider} signer={signer} showNotification={showNotification} /> : 
-                                <div className="text-center text-white"><p>Please connect your wallet to use the converter.</p></div>
                         )}
-                    </main>
+                    </div>
+                     <footer className="text-center mt-8 text-gray-500 text-sm">
+                        <p>Ensure your wallet is connected to the correct network (e.g., Arbitrum).</p>
+                        <p>This is a decentralized application. All transactions are final.</p>
+                    </footer>
                 </div>
             );
         }
