@@ -1,430 +1,723 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Service Point Network Rewards Portal</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.1/dist/ethers.umd.min.js"></script>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-    .external-link::after {
-        content: ' ↗';
-        font-size: 0.8em;
-        vertical-align: super;
-    }
-    #customer-list-body::-webkit-scrollbar, #transaction-log::-webkit-scrollbar {
-        width: 6px;
-    }
-    #customer-list-body::-webkit-scrollbar-track, #transaction-log::-webkit-scrollbar-track {
-        background: #374151; /* gray-700 */
-    }
-    #customer-list-body::-webkit-scrollbar-thumb, #transaction-log::-webkit-scrollbar-thumb {
-        background: #6b7280; /* gray-500 */
-        border-radius: 3px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Point Network</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- React Libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    
+    <!-- Babel to transpile JSX in the browser -->
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <!-- Ethers.js library for web3 interaction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    
+    <style>
+        /* Simple animation for notification */
+        @keyframes fade-in-down {
+            0% {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fade-in-down {
+            animation: fade-in-down 0.5s ease-out forwards;
+        }
+    </style>
 </head>
+<body class="bg-gray-900">
 
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
-  <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-    <header class="mb-10 pb-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Service Point Network</h1>
-        <p class="text-lg text-gray-600 dark:text-gray-400">Rewards & Administration Portal</p>
-      </div>
-      <div id="wallet-status">
-         <button onclick="connectWallet()" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Connect Wallet</button>
-      </div>
-    </header>
+    <!-- The root element where the React app will be mounted -->
+    <div id="root"></div>
 
-    <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
-      <!-- Left Column: System Info -->
-      <div class="lg:col-span-1 space-y-8">
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg">
-          <h2 class="text-xl font-bold mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">1. System Configuration</h2>
-          <div class="space-y-4 text-sm">
-            <div class="flex justify-between items-center"><span class="font-semibold text-gray-600 dark:text-gray-400">SPN Token:</span><a id="spn-address" href="#" target="_blank" class="font-mono text-blue-500 hover:underline external-link"></a></div>
-            <div class="flex justify-between items-center"><span class="font-semibold text-gray-600 dark:text-gray-400">Staking Contract:</span><a id="staking-address" href="#" target="_blank" class="font-mono text-blue-500 hover:underline external-link"></a></div>
-            <div class="flex justify-between items-center"><span class="font-semibold text-gray-600 dark:text-gray-400">SRV Token:</span><a id="srv-address" href="#" target="_blank" class="font-mono text-blue-500 hover:underline external-link"></a></div>
-            <div class="flex justify-between items-center"><span class="font-semibold text-gray-600 dark:text-gray-400">SREV Token:</span><a id="srev-address" href="#" target="_blank" class="font-mono text-blue-500 hover:underline external-link"></a></div>
-            <div class="flex justify-between items-center"><span class="font-semibold text-gray-600 dark:text-gray-400">Converter Contract:</span><a id="converter-address" href="#" target="_blank" class="font-mono text-blue-500 hover:underline external-link"></a></div>
-            <div class="flex justify-between items-center"><span class="font-semibold text-gray-600 dark:text-gray-400">Yield Contract:</span><a id="yield-address" href="#" target="_blank" class="font-mono text-blue-500 hover:underline external-link"></a></div>
-            <div class="flex justify-between items-center"><span class="font-semibold text-gray-600 dark:text-gray-400">Reward Token:</span><a id="reward-address" href="#" target="_blank" class="font-mono text-blue-500 hover:underline external-link"></a></div>
-          </div>
-        </div>
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg">
-            <h2 class="text-xl font-bold mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">Fund Yield Contract</h2>
-             <div class="flex items-center gap-4">
-                 <input id="fundAmount" type="number" placeholder="Amount of Reward Token" class="block w-full bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3">
-                 <button onclick="fundYieldContract()" class="w-auto bg-blue-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap">Fund</button>
-             </div>
-        </div>
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg">
-          <h2 class="text-xl font-bold mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">Transaction Log</h2>
-           <ul id="transaction-log" class="space-y-2 h-96 overflow-y-auto text-sm">
-                <li class="text-gray-500 dark:text-gray-400">No actions performed yet.</li>
-            </ul>
-        </div>
-      </div>
+    <!-- React application code (using Babel for in-browser JSX) -->
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useMemo } = React;
 
-      <!-- Right Column: Actions -->
-      <div class="lg:col-span-2 space-y-8">
+        // --- Configuration ---
+        const CONVERTER_CONTRACT_ADDRESS = "0x524997F5Cf25537a275ad5D0A6A346c733a4fA41";
+        const SPN_TOKEN_ADDRESS = "0x29950E3186999F490777f00d97279a62b2dD1818";
+
+        const CONVERTER_ABI = [
+            {"inputs":[{"internalType":"address","name":"_spn","type":"address"},{"internalType":"address","name":"_srv","type":"address"},{"internalType":"address","name":"_dao","type":"address"},{"internalType":"uint256","name":"_rate","type":"uint256"}],"stateMutability":"nonpayable","type":"constructor"},
+            {"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"newRate","type":"uint256"}],"name":"ConversionRateUpdated","type":"event"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"spnBurned","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"srvReceived","type":"uint256"}],"name":"Converted","type":"event"},
+            {"inputs":[{"internalType":"uint256","name":"spnAmount","type":"uint256"}],"name":"burnAndConvert","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[],"name":"conversionRate","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"dao","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"newDao","type":"address"}],"name":"setDAO","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[],"name":"spn","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"srv","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"newRate","type":"uint256"}],"name":"updateConversionRate","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdrawSRV","outputs":[],"stateMutability":"nonpayable","type":"function"}
+        ];
         
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg">
-          <h2 class="text-xl font-bold mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">2. Add Customer to Dashboard</h2>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div class="md:col-span-1">
-              <label for="customerNumber" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Customer Number *</label>
-              <input type="text" id="customerNumber" placeholder="e.g. CUST-1001" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3">
-            </div>
-            <div class="md:col-span-1">
-              <label for="customerWallet" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Customer Wallet Address *</label>
-              <input type="text" id="customerWallet" placeholder="0x... (Managed by backend)" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3">
-            </div>
-             <button onclick="addCustomer()" class="w-full md:w-auto bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors">Add Customer</button>
-          </div>
-        </div>
+        const SPN_TOKEN_ABI = [{"inputs":[{"internalType":"address","name":"admin","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Paused","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"SPNMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Unpaused","type":"event"},{"inputs":[],"name":"DEFAULT_ADMIN_ROLE","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MINTER_ROLE","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"hasRole","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"unpause","outputs":[],"stateMutability":"nonpayable","type":"function"}];
         
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg">
-          <h2 class="text-xl font-bold mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">3. Admin Actions: Issue Tokens</h2>
-          <div class="mb-6">
-            <label for="targetCustomer" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Target Customer Wallet Address</label>
-            <input type="text" id="targetCustomer" placeholder="Enter wallet address to issue tokens to" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3">
-          </div>
-          
-          <div>
-            <h3 class="font-semibold text-lg mb-2">Issue SPN (Points)</h3>
-            <div class="flex items-center gap-3">
-               <input id="issueAmount" type="number" placeholder="e.g. 500" class="block w-full bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3">
-               <button onclick="issueSPN()" class="bg-green-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap">Issue SPN</button>
-            </div>
-          </div>
-        </div>
+        const ERC20_ABI = [
+            "function balanceOf(address account) view returns (uint256)",
+            "function approve(address spender, uint256 amount) returns (bool)",
+            "function transfer(address to, uint256 amount) returns (bool)",
+            "function allowance(address owner, address spender) view returns (uint256)",
+            "function decimals() view returns (uint8)",
+            "function totalSupply() view returns (uint256)"
+        ];
 
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg">
-            <div class="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
-              <h2 class="text-xl font-bold">4. Customer Userbase</h2>
-              <button onclick="refreshAllBalances()" class="text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold py-1 px-3 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">Refresh All</button>
-            </div>
-            <div id="customer-list-container" class="h-64 overflow-y-auto pr-2">
-                <table class="w-full text-sm text-left">
-                    <thead class="sticky top-0 bg-gray-50 dark:bg-gray-700 text-xs text-gray-700 dark:text-gray-400 uppercase">
-                        <tr>
-                            <th scope="col" class="px-4 py-3">Customer</th>
-                            <th scope="col" class="px-4 py-3 text-right">SPN</th>
-                            <th scope="col" class="px-4 py-3 text-right">SRV</th>
-                            <th scope="col" class="px-4 py-3 text-right">SREV</th>
-                            <th scope="col" class="px-4 py-3 text-right">USDC</th>
-                            <th scope="col" class="px-4 py-3 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="customer-list-body">
-                        <tr>
-                            <td colspan="6" class="text-center py-10 text-gray-500 dark:text-gray-400">No customers added yet.</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-      </div>
-    </main>
-  </div>
+        // --- Helper Components ---
+        const Notification = ({ message, type, onClear }) => {
+            if (!message) return null;
+            const colors = {
+                success: 'bg-green-100 border-green-400 text-green-700',
+                error: 'bg-red-100 border-red-400 text-red-700',
+                info: 'bg-blue-100 border-blue-400 text-blue-700'
+            };
+            return (
+                <div className={`fixed top-20 right-5 p-4 border rounded-lg shadow-lg animate-fade-in-down z-50 ${colors[type] || 'bg-gray-100'}`} role="alert">
+                    <div className="flex">
+                        <div className="py-1">
+                            <p className="font-bold">{type.charAt(0).toUpperCase() + type.slice(1)}</p>
+                            <p className="text-sm">{message}</p>
+                        </div>
+                        <button onClick={onClear} className="ml-4 text-2xl font-semibold leading-none">&times;</button>
+                    </div>
+                </div>
+            );
+        };
 
-  <script>
-    let provider, signer;
-    let customers = [];
-    let contracts = {};
+        const Spinner = () => (
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+        );
+        
+        // --- Page Components ---
 
-    const addresses = {
-        spn: '0x29950E3186999F490777f00d97279a62b2dD1818',
-        staking: '0x691e29E98ECDc5ae948355F30102cD4D637eddB7',
-        srv: '0x057ba66c2109Fd4487F0781E0203B71fd77a6341',
-        srev: '0x2F745Da2FA453ee76c756fADcc081f59284B2a40',
-        converter: '0x524997F5Cf25537a275ad5D0A6A346c733a4fA41',
-        yield: '0x71f618EFb0422687e5B2ad9cD973aDACb645D9DE',
-        reward: '0xaf88d065e77c8cc2239327c5edb3a432268e5831'
-    };
+        function ConverterPage({ account, provider, signer, showNotification }) {
+            const [converterContract, setConverterContract] = useState(null);
+            const [spnContract, setSpnContract] = useState(null);
+            const [srvContract, setSrvContract] = useState(null);
+            const [conversionRate, setConversionRate] = useState(0);
 
-    const abis = {
-        erc20: JSON.parse('[{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"value","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"}]'),
-        spn: JSON.parse(`[{"inputs":[{"internalType":"address","name":"admin","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Paused","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"SPNMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Unpaused","type":"event"},{"inputs":[],"name":"DEFAULT_ADMIN_ROLE","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MINTER_ROLE","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"hasRole","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"unpause","outputs":[],"stateMutability":"nonpayable","type":"function"}]`),
-        srv: JSON.parse(`[{"inputs":[{"components":[{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"symbol","type":"string"},{"internalType":"string","name":"logo","type":"string"},{"internalType":"uint8","name":"decimals","type":"uint8"},{"internalType":"uint256","name":"initialSupply","type":"uint256"},{"internalType":"uint256","name":"maxSupply","type":"uint256"},{"internalType":"address","name":"treasury","type":"address"},{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"referrer","type":"address"},{"internalType":"address","name":"tokenStore","type":"address"},{"components":[{"components":[{"internalType":"uint256","name":"percentage","type":"uint256"},{"internalType":"bool","name":"onlyOnSwaps","type":"bool"}],"internalType":"struct ITokenLauncherERC20.FeeDetails","name":"transferFee","type":"tuple"},{"components":[{"internalType":"uint256","name":"percentage","type":"uint256"},{"internalType":"bool","name":"onlyOnSwaps","type":"bool"}],"internalType":"struct ITokenLauncherERC20.FeeDetails","name":"burn","type":"tuple"},{"components":[{"internalType":"uint256","name":"percentage","type":"uint256"},{"internalType":"bool","name":"onlyOnSwaps","type":"bool"}],"internalType":"struct ITokenLauncherERC20.FeeDetails","name":"reflection","type":"tuple"},{"components":[{"internalType":"uint256","name":"percentage","type":"uint256"},{"internalType":"bool","name":"onlyOnSwaps","type":"bool"}],"internalType":"struct ITokenLauncherERC20.FeeDetails","name":"buyback","type":"tuple"}],"internalType":"struct ITokenLauncherERC20.Fees","name":"fees","type":"tuple"},{"internalType":"address","name":"buybackHandler","type":"address"},{"internalType":"enum ITokenLauncherCommon.PaymentMethod","name":"paymentMethod","type":"uint8"}],"internalType":"struct ITokenLauncherERC20.CreateErc20Input","name":"_input","type":"tuple"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"router","type":"address"},{"indexed":true,"internalType":"address","name":"pairToken","type":"address"},{"indexed":false,"internalType":"uint256","name":"liquidityBasisPoints","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"priceImpactBasisPoints","type":"uint256"}],"name":"BuyBackDetailsUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"pool","type":"address"}],"name":"ExchangePoolAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"pool","type":"address"}],"name":"ExchangePoolRemoved","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"account","type":"address"}],"name":"ExemptedAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"account","type":"address"}],"name":"ExemptedRemoved","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"role","type":"bytes32"},{"indexed":true,"internalType":"bytes32","name":"previousAdminRole","type":"bytes32"},{"indexed":true,"internalType":"bytes32","name":"newAdminRole","type":"bytes32"}],"name":"RoleAdminChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"role","type":"bytes32"},{"indexed":true,"internalType":"address","name":"account","type":"address"},{"indexed":true,"internalType":"address","name":"sender","type":"address"}],"name":"RoleGranted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"role","type":"bytes32"},{"indexed":true,"internalType":"address","name":"account","type":"address"},{"indexed":true,"internalType":"address","name":"sender","type":"address"}],"name":"RoleRevoked","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"newTokenLauncher","type":"address"}],"name":"TokenLauncherUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"account","type":"address"},{"indexed":true,"internalType":"address","name":"receiver","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":true,"internalType":"string","name":"taxType","type":"string"}],"name":"TransferTax","type":"event"},{"inputs":[],"name":"BURN_ADDRESS","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"DEFAULT_ADMIN_ROLE","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"FEE_MANAGER_ROLE","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MAX","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MULTIPLIER_BASIS","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"pool","type":"address"}],"name":"addExchangePool","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"addExemptAddress","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"buybackDetails","outputs":[{"internalType":"address","name":"pairToken","type":"address"},{"internalType":"address","name":"router","type":"address"},{"internalType":"uint256","name":"liquidityBasisPoints","type":"uint256"},{"internalType":"uint256","name":"priceImpactBasisPoints","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"buybackHandler","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"excludeAccount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"fees","outputs":[{"components":[{"internalType":"uint256","name":"percentage","type":"uint256"},{"internalType":"bool","name":"onlyOnSwaps","type":"bool"}],"internalType":"struct ITokenLauncherERC20.FeeDetails","name":"transferFee","type":"tuple"},{"components":[{"internalType":"uint256","name":"percentage","type":"uint256"},{"internalType":"bool","name":"onlyOnSwaps","type":"bool"}],"internalType":"struct ITokenLauncherERC20.FeeDetails","name":"burn","type":"tuple"},{"components":[{"internalType":"uint256","name":"percentage","type":"uint256"},{"internalType":"bool","name":"onlyOnSwaps","type":"bool"}],"internalType":"struct ITokenLauncherERC20.FeeDetails","name":"reflection","type":"tuple"},{"components":[{"internalType":"uint256","name":"percentage","type":"uint256"},{"internalType":"bool","name":"onlyOnSwaps","type":"bool"}],"internalType":"struct ITokenLauncherERC20.FeeDetails","name":"buyback","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"}],"name":"getRoleAdmin","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"grantRole","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"hasRole","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"includeAccount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"pool","type":"address"}],"name":"isExchangePool","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"isExcludedFromReflectionRewards","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"isExemptedFromTax","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"isReflectionToken","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"logo","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"maxSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tAmount","type":"uint256"}],"name":"reflect","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"tAmount","type":"uint256"},{"internalType":"bool","name":"deductTransferFee","type":"bool"}],"name":"reflectionFromToken","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"pool","type":"address"}],"name":"removeExchangePool","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"removeExemptAddress","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"renounceRole","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"revokeRole","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"components":[{"internalType":"address","name":"pairToken","type":"address"},{"internalType":"address","name":"router","type":"address"},{"internalType":"uint256","name":"liquidityBasisPoints","type":"uint256"},{"internalType":"uint256","name":"priceImpactBasisPoints","type":"uint256"}],"internalType":"struct ITokenLauncherLiquidityPoolFactory.BuyBackDetails","name":"_buybackDetails","type":"tuple"}],"name":"setBuybackDetails","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"rAmount","type":"uint256"}],"name":"tokenFromReflection","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"tokenLauncher","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalFees","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalReflection","outputs":[{"internalType":"uint256","name":"t","type":"uint256"},{"internalType":"uint256","name":"r","type":"uint256"},{"internalType":"uint256","name":"tFee","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"treasury","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"components":[{"components":[{"internalType":"uint256","name":"percentage","type":"uint256"},{"internalType":"bool","name":"onlyOnSwaps","type":"bool"}],"internalType":"struct ITokenLauncherERC20.FeeDetails","name":"transferFee","type":"tuple"},{"components":[{"internalType":"uint256","name":"percentage","type":"uint256"},{"internalType":"bool","name":"onlyOnSwaps","type":"bool"}],"internalType":"struct ITokenLauncherERC20.FeeDetails","name":"burn","type":"tuple"},{"components":[{"internalType":"uint256","name":"percentage","type":"uint256"},{"internalType":"bool","name":"onlyOnSwaps","type":"bool"}],"internalType":"struct ITokenLauncherERC20.FeeDetails","name":"reflection","type":"tuple"},{"components":[{"internalType":"uint256","name":"percentage","type":"uint256"},{"internalType":"bool","name":"onlyOnSwaps","type":"bool"}],"internalType":"struct ITokenLauncherERC20.FeeDetails","name":"buyback","type":"tuple"}],"internalType":"struct ITokenLauncherERC20.Fees","name":"_fees","type":"tuple"}],"name":"updateFees","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_newTokenLauncher","type":"address"}],"name":"updateTokenLauncher","outputs":[],"stateMutability":"nonpayable","type":"function"}]`),
-        converter: JSON.parse('[{"inputs":[{"internalType":"address","name":"_for","type":"address"}],"name":"convert","outputs":[],"stateMutability":"nonpayable","type":"function"}]'),
-        staking: JSON.parse('[{"inputs":[{"internalType":"address","name":"_for","type":"address"}],"name":"stake","outputs":[],"stateMutability":"nonpayable","type":"function"}]'),
-        yield: JSON.parse(`[{"inputs":[{"internalType":"address","name":"_rewardToken","type":"address"},{"internalType":"address","name":"_srevToken","type":"address"},{"internalType":"address","name":"_daoOperator","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"newAPR","type":"uint256"}],"name":"APRUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"newInterval","type":"uint256"}],"name":"ClaimIntervalUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Claimed","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"EmergencyWithdrawal","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"bool","name":"status","type":"bool"}],"name":"Paused","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"RewardFunded","type":"event"},{"inputs":[],"name":"BPS_DIVISOR","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"SECONDS_IN_YEAR","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address[]","name":"users","type":"address[]"}],"name":"accrueAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"baseAPR","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"claim","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"claimInterval","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"daoOperator","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"}],"name":"emergencyWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"fund","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"lastClaimTime","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"lastClaimed","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"pendingRewards","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"rewardToken","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"newAPR","type":"uint256"}],"name":"setBaseAPR","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"newInterval","type":"uint256"}],"name":"setClaimInterval","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bool","name":"_paused","type":"bool"}],"name":"setPaused","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"srevToken","outputs":[{"internalType":"contract ISREVToken","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"viewClaimCooldown","outputs":[{"internalType":"uint256","name":"secondsUntilClaimable","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"viewPending","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"viewRewardPoolBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}]`)
-    };
+            // Balances and supply data
+            const [spnBalance, setSpnBalance] = useState('0');
+            const [srvBalance, setSrvBalance] = useState('0');
+            const [spnTotalSupply, setSpnTotalSupply] = useState('0');
+            const [converterSrvBalance, setConverterSrvBalance] = useState('0');
 
-    // --- Initialization ---
-    document.addEventListener('DOMContentLoaded', () => {
-        loadCustomersFromStorage();
-        for (const [key, addr] of Object.entries(addresses)) {
-            const el = document.getElementById(`${key}-address`);
-            if (el) {
-                el.textContent = `${addr.substring(0, 6)}...${addr.substring(addr.length - 6)}`;
-                el.href = `https://arbiscan.io/address/${addr}`;
-            }
-        }
-    });
-
-    // --- Wallet Connection ---
-    async function connectWallet() {
-        if (typeof window.ethereum === 'undefined') {
-            return showModal('Error', 'MetaMask is not installed. Please install it to use this dApp.');
-        }
-        try {
-            provider = new ethers.BrowserProvider(window.ethereum);
-            signer = await provider.getSigner();
-            const address = await signer.getAddress();
+            const [spnDecimals, setSpnDecimals] = useState(18);
+            const [srvDecimals, setSrvDecimals] = useState(18);
             
-            contracts.spn = new ethers.Contract(addresses.spn, abis.spn, signer);
-            contracts.srv = new ethers.Contract(addresses.srv, abis.srv, signer);
-            contracts.srev = new ethers.Contract(addresses.srev, abis.srv, signer); 
-            contracts.reward = new ethers.Contract(addresses.reward, abis.erc20, signer);
-            contracts.converter = new ethers.Contract(addresses.converter, abis.converter, signer);
-            contracts.staking = new ethers.Contract(addresses.staking, abis.staking, signer);
-            contracts.yield = new ethers.Contract(addresses.yield, abis.yield, signer);
+            const [spnAmount, setSpnAmount] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [isDao, setIsDao] = useState(false);
+            const [daoAddress, setDaoAddress] = useState(null);
 
-            const walletStatusDiv = document.getElementById('wallet-status');
-            walletStatusDiv.innerHTML = `<div class="text-right"><p class="font-semibold text-green-500">Connected</p><p class="text-xs font-mono">${address.substring(0, 6)}...${address.substring(address.length - 4)}</p></div>`;
-            addLogEntry(`Wallet ${address.substring(0,6)}... connected.`);
-            fetchSystemStats();
-        } catch (err) {
-            console.error("Connection failed:", err);
-            showModal('Connection Failed', err.message || 'Could not connect to wallet.');
+             useEffect(() => {
+                if (signer && account) {
+                    initializeContractsAndData();
+                }
+            }, [signer, account]);
+            
+            useEffect(() => {
+                if (account && daoAddress) {
+                    setIsDao(account.toLowerCase() === daoAddress.toLowerCase());
+                } else {
+                    setIsDao(false);
+                }
+            }, [account, daoAddress]);
+
+
+            const initializeContractsAndData = useCallback(async () => {
+                if (!signer || !window.ethers) return;
+                
+                setIsLoading(true);
+                try {
+                    const converter = new window.ethers.Contract(CONVERTER_CONTRACT_ADDRESS, CONVERTER_ABI, signer);
+                    setConverterContract(converter);
+
+                    const [spnAddr, srvAddr, daoAddr, rate] = await Promise.all([
+                        converter.spn(),
+                        converter.srv(),
+                        converter.dao(),
+                        converter.conversionRate()
+                    ]);
+                    setDaoAddress(daoAddr);
+
+                    const spn = new window.ethers.Contract(spnAddr, ERC20_ABI, signer);
+                    const srv = new window.ethers.Contract(srvAddr, ERC20_ABI, signer);
+                    setSpnContract(spn);
+                    setSrvContract(srv);
+                    setConversionRate(rate);
+
+                    const [spnBal, srvBal, spnDec, srvDec, spnSupply, converterSrvBal] = await Promise.all([
+                        spn.balanceOf(account),
+                        srv.balanceOf(account),
+                        spn.decimals(),
+                        srv.decimals(),
+                        spn.totalSupply(),
+                        srv.balanceOf(CONVERTER_CONTRACT_ADDRESS)
+                    ]);
+                    
+                    setSpnDecimals(spnDec);
+                    setSrvDecimals(srvDec);
+                    setSpnBalance(window.ethers.utils.formatUnits(spnBal, spnDec));
+                    setSrvBalance(window.ethers.utils.formatUnits(srvBal, srvDec));
+                    setSpnTotalSupply(window.ethers.utils.formatUnits(spnSupply, spnDec));
+                    setConverterSrvBalance(window.ethers.utils.formatUnits(converterSrvBal, srvDec));
+
+
+                } catch (error) {
+                    console.error("Initialization failed:", error);
+                    showNotification('Failed to load converter data. Are you on the right network?', 'error');
+                } finally {
+                    setIsLoading(false);
+                }
+            }, [signer, account]);
+
+            const handleConvert = async () => {
+                if (!converterContract || !spnContract || !window.ethers) return;
+                if (parseFloat(spnAmount) <= 0 || isNaN(parseFloat(spnAmount))) {
+                    showNotification('Please enter a valid amount > 0.', 'error');
+                    return;
+                }
+                
+                setIsLoading(true);
+                try {
+                    const amountInWei = window.ethers.utils.parseUnits(spnAmount, spnDecimals);
+                    const allowance = await spnContract.allowance(account, CONVERTER_CONTRACT_ADDRESS);
+                    if (allowance.lt(amountInWei)) {
+                        showNotification('Approving SPN token spend...', 'info');
+                        const approveTx = await spnContract.approve(CONVERTER_CONTRACT_ADDRESS, amountInWei);
+                        await approveTx.wait();
+                        showNotification('Approval successful! Now converting...', 'success');
+                    }
+                    const convertTx = await converterContract.burnAndConvert(amountInWei);
+                    showNotification('Conversion transaction sent... waiting for confirmation.', 'info');
+                    await convertTx.wait();
+                    showNotification('Conversion successful!', 'success');
+                    setSpnAmount('');
+                    initializeContractsAndData(); 
+                } catch (error) {
+                    console.error("Conversion failed:", error);
+                    showNotification(error.reason || error.message || 'Conversion failed.', 'error');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const AdminPanel = () => {
+                const [newRate, setNewRate] = useState('');
+                const [withdrawAddr, setWithdrawAddr] = useState('');
+                const [withdrawAmt, setWithdrawAmt] = useState('');
+                const [newDaoAddr, setNewDaoAddr] = useState('');
+                const [depositSrvAmount, setDepositSrvAmount] = useState('');
+
+                const handleUpdateRate = async () => {
+                    if (!converterContract || !newRate || !window.ethers) return;
+                    setIsLoading(true);
+                    try {
+                        const rateInWei = window.ethers.utils.parseUnits(newRate, 18);
+                        const tx = await converterContract.updateConversionRate(rateInWei);
+                        await tx.wait();
+                        showNotification('Conversion rate updated.', 'success');
+                        initializeContractsAndData();
+                    } catch (err) {
+                        showNotification(err.reason || 'Failed to update rate.', 'error');
+                    } finally {
+                        setIsLoading(false);
+                    }
+                };
+                
+                const handleWithdraw = async () => {
+                    if (!converterContract || !withdrawAddr || !withdrawAmt || !window.ethers) return;
+                    setIsLoading(true);
+                    try {
+                        const amountInWei = window.ethers.utils.parseUnits(withdrawAmt, srvDecimals);
+                        const tx = await converterContract.withdrawSRV(withdrawAddr, amountInWei);
+                        await tx.wait();
+                        showNotification('SRV withdrawn successfully.', 'success');
+                        initializeContractsAndData();
+                    } catch (err) {
+                        showNotification(err.reason || 'Withdraw failed.', 'error');
+                    } finally {
+                        setIsLoading(false);
+                    }
+                };
+                
+                const handleSetDao = async () => {
+                     if (!converterContract || !newDaoAddr || !window.ethers) return;
+                    setIsLoading(true);
+                    try {
+                        const tx = await converterContract.setDAO(newDaoAddr);
+                        await tx.wait();
+                        showNotification('DAO address updated.', 'success');
+                        initializeContractsAndData();
+                    } catch (err) {
+                        showNotification(err.reason || 'Failed to set new DAO.', 'error');
+                    } finally {
+                        setIsLoading(false);
+                    }
+                };
+
+                const handleDepositSrv = async () => {
+                    if (!srvContract || !depositSrvAmount || parseFloat(depositSrvAmount) <= 0 || !window.ethers) {
+                        showNotification('Please enter a valid amount to deposit.', 'error');
+                        return;
+                    }
+                    setIsLoading(true);
+                    try {
+                        const amountInWei = window.ethers.utils.parseUnits(depositSrvAmount, srvDecimals);
+                        // The DAO simply transfers SRV to the converter contract address
+                        const tx = await srvContract.transfer(CONVERTER_CONTRACT_ADDRESS, amountInWei);
+                        showNotification('Deposit transaction sent...', 'info');
+                        await tx.wait();
+                        showNotification('SRV deposited successfully!', 'success');
+                        setDepositSrvAmount('');
+                        initializeContractsAndData(); // Refresh data
+                    } catch(err) {
+                        showNotification(err.reason || 'Failed to deposit SRV.', 'error');
+                    } finally {
+                        setIsLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="mt-8 p-6 bg-gray-700 rounded-xl space-y-6">
+                        <h3 className="text-xl font-bold text-center text-yellow-400">DAO Admin Panel</h3>
+                        {/* Deposit SRV */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium">Deposit SRV to Converter</label>
+                            <div className="flex space-x-2">
+                                <input type="text" value={depositSrvAmount} onChange={e => setDepositSrvAmount(e.target.value)} placeholder="Amount of SRV" className="w-full bg-gray-800 border-gray-600 rounded-md p-2"/>
+                                <button onClick={handleDepositSrv} disabled={isLoading} className="px-4 py-2 bg-blue-500 text-black font-semibold rounded-md hover:bg-blue-600 disabled:bg-gray-500 flex items-center justify-center">
+                                   {isLoading ? <Spinner /> : "Deposit"}
+                                </button>
+                            </div>
+                        </div>
+                        {/* Update Rate */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium">Update Conversion Rate</label>
+                            <div className="flex space-x-2">
+                                <input type="text" value={newRate} onChange={e => setNewRate(e.target.value)} placeholder="e.g., 0.5268" className="w-full bg-gray-800 border-gray-600 rounded-md p-2 focus:ring-yellow-500 focus:border-yellow-500"/>
+                                <button onClick={handleUpdateRate} disabled={isLoading} className="px-4 py-2 bg-yellow-500 text-black font-semibold rounded-md hover:bg-yellow-600 disabled:bg-gray-500 flex items-center justify-center">
+                                    {isLoading ? <Spinner /> : "Update"}
+                                </button>
+                            </div>
+                        </div>
+                         {/* Withdraw SRV */}
+                         <div className="space-y-2">
+                            <label className="block text-sm font-medium">Withdraw SRV from Converter</label>
+                            <input type="text" value={withdrawAddr} onChange={e => setWithdrawAddr(e.target.value)} placeholder="Recipient Address" className="w-full bg-gray-800 border-gray-600 rounded-md p-2 mb-2"/>
+                            <div className="flex space-x-2">
+                                <input type="text" value={withdrawAmt} onChange={e => setWithdrawAmt(e.target.value)} placeholder="Amount of SRV" className="w-full bg-gray-800 border-gray-600 rounded-md p-2"/>
+                                <button onClick={handleWithdraw} disabled={isLoading} className="px-4 py-2 bg-yellow-500 text-black font-semibold rounded-md hover:bg-yellow-600 disabled:bg-gray-500 flex items-center justify-center">
+                                   {isLoading ? <Spinner /> : "Withdraw"}
+                                </button>
+                            </div>
+                        </div>
+                        {/* Set DAO */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium">Set New DAO</label>
+                            <div className="flex space-x-2">
+                                <input type="text" value={newDaoAddr} onChange={e => setNewDaoAddr(e.target.value)} placeholder="New DAO Address" className="w-full bg-gray-800 border-gray-600 rounded-md p-2"/>
+                                <button onClick={handleSetDao} disabled={isLoading} className="px-4 py-2 bg-yellow-500 text-black font-semibold rounded-md hover:bg-yellow-600 disabled:bg-gray-500 flex items-center justify-center">
+                                    {isLoading ? <Spinner /> : "Set DAO"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const srvToReceive = useMemo(() => {
+                if (!spnAmount || !conversionRate || isNaN(parseFloat(spnAmount)) || !window.ethers) {
+                    return '0';
+                }
+                try {
+                    const spnWei = window.ethers.utils.parseUnits(spnAmount, spnDecimals);
+                    const srvWei = spnWei.mul(conversionRate).div(window.ethers.utils.parseUnits("1", 18));
+                    return window.ethers.utils.formatUnits(srvWei, srvDecimals);
+                } catch (e) {
+                    return '0';
+                }
+            }, [spnAmount, conversionRate, spnDecimals, srvDecimals]);
+
+
+            return (
+                 <div className="w-full max-w-md bg-gray-800 rounded-xl shadow-2xl p-8 text-white">
+                        <div className="text-center mb-6">
+                            <h1 className="text-3xl font-bold text-cyan-400">SPN to SRV Converter</h1>
+                            <p className="text-gray-400 mt-2">A decentralized token conversion utility</p>
+                            <a href={`https://arbiscan.io/address/${CONVERTER_CONTRACT_ADDRESS}`} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 hover:text-cyan-400 break-all">{CONVERTER_CONTRACT_ADDRESS}</a>
+                        </div>
+                        
+                        <div className="space-y-6">
+                                <div>
+                                    <div className="grid grid-cols-2 gap-4 mt-2 text-center">
+                                       <div className="bg-gray-700 p-3 rounded-lg">
+                                           <p className="text-sm text-gray-400">Your SPN Balance</p>
+                                           <p className="text-lg font-semibold">{parseFloat(spnBalance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</p>
+                                       </div>
+                                       <div className="bg-gray-700 p-3 rounded-lg">
+                                           <p className="text-sm text-gray-400">Your SRV Balance</p>
+                                           <p className="text-lg font-semibold">{parseFloat(srvBalance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</p>
+                                       </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4 mt-4 text-center">
+                                       <div className="bg-gray-700 p-3 rounded-lg">
+                                           <p className="text-sm text-gray-400">Circulating SPN</p>
+                                           <p className="text-lg font-semibold">{parseFloat(spnTotalSupply).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}</p>
+                                       </div>
+                                       <div className="bg-gray-700 p-3 rounded-lg">
+                                           <p className="text-sm text-gray-400">Converter SRV Balance</p>
+                                           <p className="text-lg font-semibold">{parseFloat(converterSrvBalance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</p>
+                                       </div>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                     <div className="text-center bg-gray-900/50 p-2 rounded-md">
+                                        <p className="text-sm text-gray-300">Conversion Rate: <span className="font-bold text-cyan-400">1 SPN = {window.ethers ? window.ethers.utils.formatUnits(conversionRate, 18) : '...'} SRV</span></p>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="spn-amount" className="block text-sm font-medium text-gray-300 mb-1">Amount of SPN to Convert</label>
+                                        <input
+                                            id="spn-amount"
+                                            type="number"
+                                            value={spnAmount}
+                                            onChange={(e) => setSpnAmount(e.target.value)}
+                                            placeholder="0.0"
+                                            className="w-full bg-gray-900 border-gray-600 rounded-lg p-3 text-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                                        />
+                                    </div>
+                                    <div className="text-center text-gray-400">
+                                        <p>You will receive approximately:</p>
+                                        <p className="text-xl font-bold text-white">{parseFloat(srvToReceive).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 6})}</p>
+                                    </div>
+                                    <button
+                                        onClick={handleConvert}
+                                        disabled={isLoading || !spnAmount || parseFloat(spnAmount) <= 0}
+                                        className="w-full py-3 px-4 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-600 transition-colors duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center"
+                                    >
+                                        {isLoading ? <Spinner /> : "Approve & Convert"}
+                                    </button>
+                                </div>
+                                {isDao && <AdminPanel />}
+                            </div>
+                    </div>
+            )
         }
-    }
+        
+        const initialCustomers = [
+            { id: 1000, address: '0x1cAdCF761E8dd627b372B633C3758856170CbA1F', spn: 0, srv: 40.037, srev: '2,897.4', usdc: '$0.00' },
+            { id: 1001, address: '0x0D093C896F6D37229C912eB841F5BD93156695b3', spn: 1521, srv: 0, srev: '0', usdc: '$0.00' },
+            { id: 1002, address: '0xa9CC31eC558D3C7643828C098b060610785379e3', spn: 500, srv: 0, srev: '0', usdc: '$0.00' },
+        ];
 
-    // --- Data Fetching ---
-    async function fetchSystemStats() {
-        if (!signer) return;
-        try {
-            const [yieldBal, spnSupply] = await Promise.all([
-                contracts.yield.viewRewardPoolBalance(),
-                contracts.spn.totalSupply()
-            ]);
-            document.getElementById('yield-balance').textContent = `${parseFloat(ethers.formatUnits(yieldBal, 6)).toFixed(2)} USDC`;
-            document.getElementById('spn-total-supply').textContent = `${parseFloat(ethers.formatUnits(spnSupply, 18)).toLocaleString()}`;
-        } catch (e) {
-            console.error("Failed to fetch system stats:", e);
+        function AdminPortalPage({ account, signer, showNotification }) {
+            const [customers, setCustomers] = useState(initialCustomers);
+            const [isLoading, setIsLoading] = useState(false);
+            
+            // State for contract addresses
+            const [contractAddresses, setContractAddresses] = useState({ spn: SPN_TOKEN_ADDRESS, srv: '', converter: CONVERTER_CONTRACT_ADDRESS });
+
+            // State for "Add Customer" inputs
+            const [newCustomerId, setNewCustomerId] = useState('');
+            const [newCustomerAddress, setNewCustomerAddress] = useState('');
+
+            // State for "Issue SPN" inputs
+            const [issueAddress, setIssueAddress] = useState('');
+            const [issueAmount, setIssueAmount] = useState('');
+            const [isMinter, setIsMinter] = useState(false);
+
+            // Fetch contract addresses and check for minter role
+            useEffect(() => {
+                const initAdminData = async () => {
+                    if (!signer || !account) return;
+                    try {
+                        // Check Minter Role
+                        const spnContract = new window.ethers.Contract(SPN_TOKEN_ADDRESS, SPN_TOKEN_ABI, signer);
+                        const minterRole = await spnContract.MINTER_ROLE();
+                        const hasMinterRole = await spnContract.hasRole(minterRole, account);
+                        setIsMinter(hasMinterRole);
+
+                        // Fetch addresses from Converter
+                        const converter = new window.ethers.Contract(CONVERTER_CONTRACT_ADDRESS, CONVERTER_ABI, signer);
+                        const srvAddr = await converter.srv();
+                        setContractAddresses(prev => ({ ...prev, spn: SPN_TOKEN_ADDRESS, srv: srvAddr }));
+
+                    } catch(err) {
+                        console.error("Error fetching admin data:", err);
+                        showNotification('Could not fetch admin contract data.', 'error');
+                    }
+                };
+                initAdminData();
+            }, [signer, account]);
+
+
+            const handleRefresh = () => {
+                setIsLoading(true);
+                showNotification('Refreshing customer data...', 'info');
+                // Simulate a network request
+                setTimeout(() => {
+                    setCustomers(initialCustomers);
+                    setIsLoading(false);
+                    showNotification('Customer data refreshed!', 'success');
+                }, 1000);
+            };
+
+            const handleEraseUser = (customerId) => {
+                setCustomers(currentCustomers => currentCustomers.filter(customer => customer.id !== customerId));
+                showNotification(`Customer ${customerId} removed.`, 'success');
+            };
+            
+            const handleAddCustomer = () => {
+                if (!newCustomerId || !newCustomerAddress) {
+                    showNotification('Please enter a Customer # and Address.', 'error');
+                    return;
+                }
+                const newCustomer = {
+                    id: newCustomerId,
+                    address: newCustomerAddress,
+                    spn: 0,
+                    srv: 0,
+                    srev: '0',
+                    usdc: '$0.00',
+                };
+                setCustomers(currentCustomers => [newCustomer, ...currentCustomers]);
+                showNotification(`Customer ${newCustomerId} added successfully.`, 'success');
+                setNewCustomerId('');
+                setNewCustomerAddress('');
+            };
+
+            const handleIssueSpn = async () => {
+                if (!issueAddress || !issueAmount || parseFloat(issueAmount) <= 0) {
+                    showNotification('Please enter a valid address and amount > 0.', 'error');
+                    return;
+                }
+                 if (!signer || !isMinter) {
+                    showNotification('You do not have permission to mint tokens.', 'error');
+                    return;
+                }
+                setIsLoading(true);
+                try {
+                    const spnContract = new window.ethers.Contract(SPN_TOKEN_ADDRESS, SPN_TOKEN_ABI, signer);
+                    const amountInWei = window.ethers.utils.parseUnits(issueAmount, 18); // SPN has 18 decimals
+                    const tx = await spnContract.mint(issueAddress, amountInWei);
+                    showNotification('Mint transaction sent...', 'info');
+                    await tx.wait();
+                    showNotification(`${issueAmount} SPN minted to ${issueAddress.substring(0,6)}...`, 'success');
+                    setIssueAddress('');
+                    setIssueAmount('');
+                } catch(err) {
+                    console.error("SPN Minting failed:", err);
+                    showNotification(err.reason || 'SPN Minting failed.', 'error');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+
+            return (
+                <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 text-white">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Left Column */}
+                        <div className="lg:col-span-1 space-y-6">
+                            {/* System Configuration */}
+                            <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
+                                <h2 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">1. System Configuration</h2>
+                                <div className="space-y-2 text-sm break-all">
+                                    <p>SPN Token: <a href={`https://arbiscan.io/address/${contractAddresses.spn}`} target="_blank" className="text-cyan-400 hover:underline">{contractAddresses.spn}</a></p>
+                                    <p>SRV Token: <a href={`https://arbiscan.io/address/${contractAddresses.srv}`} target="_blank" className="text-cyan-400 hover:underline">{contractAddresses.srv}</a></p>
+                                    <p>Converter: <a href={`https://arbiscan.io/address/${contractAddresses.converter}`} target="_blank" className="text-cyan-400 hover:underline">{contractAddresses.converter}</a></p>
+                                </div>
+                            </div>
+                            {/* Transaction Log */}
+                            <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
+                                 <h2 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">Transaction Log</h2>
+                                 <div className="text-xs space-y-2 font-mono h-48 overflow-y-auto">
+                                    <p>[1:35:55 PM] All balances updated.</p>
+                                    <p>[1:35:51 PM] Refreshing all customer balances...</p>
+                                    <p>[1:24:28 PM] All balances updated.</p>
+                                    <p>[1:24:28 PM] All balances updated.</p>
+                                    <p>[1:24:25 PM] Refreshing all customer balances...</p>
+                                    <p>[1:24:23 PM] Refreshing all customer balances...</p>
+                                    <p>[1:24:23 PM] Wallet 0xcfe0... connected.</p>
+                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Right Column */}
+                        <div className="lg:col-span-2 space-y-6">
+                             {/* Add Customer */}
+                             <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
+                                <h2 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">2. Add Customer to Dashboard</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                    <input type="text" value={newCustomerId} onChange={e => setNewCustomerId(e.target.value)} placeholder="e.g. 1003" className="md:col-span-1 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
+                                    <input type="text" value={newCustomerAddress} onChange={e => setNewCustomerAddress(e.target.value)} placeholder="0x..." className="md:col-span-1 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
+                                    <button onClick={handleAddCustomer} className="md:col-span-1 w-full py-3 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-600">Add Customer</button>
+                                </div>
+                            </div>
+                            {/* Issue SPN */}
+                            <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
+                                <h2 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">3. Admin: Issue SPN (Points)</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                    <input type="text" value={issueAddress} onChange={e => setIssueAddress(e.target.value)} placeholder="Enter wallet address to issue tokens to" className="md:col-span-2 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
+                                    <input type="text" value={issueAmount} onChange={e => setIssueAmount(e.target.value)} placeholder="e.g. 500" className="md:col-span-1 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
+                                    <button onClick={handleIssueSpn} disabled={!isMinter || isLoading} className="md:col-span-3 w-full mt-2 py-3 bg-green-500 text-black font-bold rounded-lg hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center">
+                                        {isLoading ? <Spinner/> : (isMinter ? 'Issue SPN' : 'Minter Role Required')}
+                                    </button>
+                                </div>
+                            </div>
+                            {/* Customer Userbase */}
+                             <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
+                                <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                                    <h2 className="text-xl font-bold">4. Customer Userbase</h2>
+                                    <button onClick={handleRefresh} disabled={isLoading} className="px-4 py-2 bg-gray-600 text-white text-sm font-semibold rounded-md hover:bg-gray-500 disabled:bg-gray-700 disabled:cursor-wait flex items-center">
+                                        {isLoading ? <Spinner/> : 'Refresh All'}
+                                    </button>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="text-xs text-gray-400 uppercase bg-gray-700">
+                                            <tr>
+                                                <th className="px-4 py-3">Customer</th>
+                                                <th className="px-4 py-3">SPN</th>
+                                                <th className="px-4 py-3">SRV</th>
+                                                <th className="px-4 py-3">SREV</th>
+                                                <th className="px-4 py-3">USDC</th>
+                                                <th className="px-4 py-3 text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {customers.map((customer) => (
+                                                <tr key={customer.id} className="border-b border-gray-700 font-mono">
+                                                    <td className="px-4 py-3">{customer.id}<br/><span className="text-gray-400 text-xs">{customer.address}</span></td>
+                                                    <td className="px-4 py-3">{customer.spn}</td>
+                                                    <td className="px-4 py-3">{customer.srv}</td>
+                                                    <td className="px-4 py-3">{customer.srev}</td>
+                                                    <td className="px-4 py-3">{customer.usdc}</td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        <button onClick={() => handleEraseUser(customer.id)} className="text-red-500 hover:text-red-400 text-xl font-bold">&times;</button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
         }
-    }
-    
-    // --- Customer Management & Persistence ---
-    function saveCustomersToStorage() {
-        localStorage.setItem('spn_customer_userbase', JSON.stringify(customers.map(c => ({id: c.id, wallet: c.wallet}))));
-    }
 
-    function loadCustomersFromStorage() {
-        const storedCustomers = localStorage.getItem('spn_customer_userbase');
-        if (storedCustomers) {
-            customers = JSON.parse(storedCustomers);
-            renderCustomers(false); 
-            if (signer) { 
-                refreshAllBalances();
-            }
+
+        // --- Main App Component (Router) ---
+        function App() {
+            const [page, setPage] = useState('admin'); // Default page
+            const [provider, setProvider] = useState(null);
+            const [signer, setSigner] = useState(null);
+            const [account, setAccount] = useState(null);
+            const [notification, setNotification] = useState({ message: '', type: '' });
+
+            useEffect(() => {
+                if (window.ethereum) {
+                    const web3Provider = new window.ethers.providers.Web3Provider(window.ethereum);
+                    setProvider(web3Provider);
+
+                    const handleAccountsChanged = (accounts) => {
+                         if (accounts.length > 0) {
+                            connectWallet(web3Provider);
+                        } else {
+                            setAccount(null);
+                            setSigner(null);
+                        }
+                    };
+                    window.ethereum.on('accountsChanged', handleAccountsChanged);
+                    return () => window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+                }
+            }, []);
+            
+            const showNotification = (message, type = 'info', duration = 5000) => {
+                setNotification({ message, type });
+                setTimeout(() => setNotification({ message: '', type: '' }), duration);
+            };
+
+            const connectWallet = async (p = provider) => {
+                if (!p) {
+                    showNotification('Web3 provider not found. Is MetaMask installed?', 'error');
+                    return;
+                }
+                try {
+                    const accounts = await p.send("eth_requestAccounts", []);
+                    if (accounts.length > 0) {
+                        setAccount(accounts[0]);
+                        setSigner(p.getSigner());
+                        showNotification('Wallet connected successfully!', 'success');
+                    }
+                } catch (error) {
+                    console.error("Failed to connect wallet:", error);
+                    showNotification(error.message || 'Failed to connect wallet.', 'error');
+                }
+            };
+            
+            const NavButton = ({ targetPage, children }) => (
+                <button 
+                    onClick={() => setPage(targetPage)}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${page === targetPage ? 'bg-cyan-500 text-black' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
+                >
+                    {children}
+                </button>
+            );
+
+            return (
+                <div className="min-h-screen font-sans flex flex-col p-4">
+                    <Notification message={notification.message} type={notification.type} onClear={() => setNotification({ message: '', type: '' })} />
+                    
+                    {/* Header Navigation */}
+                    <header className="w-full bg-gray-800 shadow-lg rounded-xl p-4 mb-6 flex justify-between items-center">
+                        <h1 className="text-xl font-bold text-white">Service Point Network</h1>
+                        <nav className="flex items-center space-x-4">
+                            <NavButton targetPage="admin">Admin Portal</NavButton>
+                            <NavButton targetPage="converter">Converter</NavButton>
+                             {!account ? (
+                                <button onClick={() => connectWallet()} className="px-4 py-2 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-600 transition-colors duration-300">
+                                    Connect Wallet
+                                </button>
+                            ) : (
+                                <div className="px-4 py-2 bg-gray-700 rounded-lg text-xs text-green-400 font-mono">
+                                    Connected: {account.substring(0,6)}...{account.substring(account.length - 4)}
+                                </div>
+                            )}
+                        </nav>
+                    </header>
+
+                    {/* Page Content */}
+                    <main className="flex-grow flex items-center justify-center">
+                        {page === 'admin' && <AdminPortalPage account={account} signer={signer} showNotification={showNotification} />}
+                        {page === 'converter' && (
+                            account ? 
+                                <ConverterPage account={account} provider={provider} signer={signer} showNotification={showNotification} /> : 
+                                <div className="text-center text-white"><p>Please connect your wallet to use the converter.</p></div>
+                        )}
+                    </main>
+                </div>
+            );
         }
-    }
 
-    async function fetchCustomerBalances(walletAddress) {
-        if (!provider) return { spn: 0, srv: 0, srev: 0, usdc: 0 };
-        const balances = { spn: 'Err', srv: 'Err', srev: 'Err', usdc: 'Err' };
-        
-        try {
-            const spnBalance = await contracts.spn.balanceOf(walletAddress);
-            balances.spn = parseFloat(ethers.formatUnits(spnBalance, 18));
-        } catch (e) { console.error(`Failed to fetch SPN balance for ${walletAddress}:`, e); }
+        // Render the App component into the root div
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
 
-        try {
-            const srvBalance = await contracts.srv.balanceOf(walletAddress);
-            balances.srv = parseFloat(ethers.formatUnits(srvBalance, 18));
-        } catch (e) { console.error(`Failed to fetch SRV balance for ${walletAddress}:`, e); }
-        
-        try {
-            const srevBalance = await contracts.srev.balanceOf(walletAddress);
-            balances.srev = parseFloat(ethers.formatUnits(srevBalance, 18));
-        } catch (e) { console.error(`Failed to fetch SREV balance for ${walletAddress}:`, e); }
-        
-        try {
-            const usdcBalance = await contracts.reward.balanceOf(walletAddress);
-            balances.usdc = parseFloat(ethers.formatUnits(usdcBalance, 6));
-        } catch (e) { console.error(`Failed to fetch USDC balance for ${walletAddress}:`, e); }
-
-        return balances;
-    }
-
-    async function addCustomer() {
-        const customerNumberInput = document.getElementById('customerNumber');
-        const customerWalletInput = document.getElementById('customerWallet');
-        
-        const customerNumber = customerNumberInput.value.trim();
-        const customerWallet = customerWalletInput.value.trim();
-
-        if (!customerNumber || !customerWallet) return showModal('Input Error', 'Please provide both a customer number and a wallet address.');
-        if (!ethers.isAddress(customerWallet)) return showModal('Input Error', 'Please enter a valid wallet address.');
-        if (!signer) return showModal('Error', 'Please connect your wallet first.');
-
-        const balances = await fetchCustomerBalances(customerWallet);
-        customers.push({ id: customerNumber, wallet: customerWallet, ...balances });
-        
-        saveCustomersToStorage();
-        renderCustomers();
-        addLogEntry(`Added customer ${customerNumber} (${customerWallet.substring(0,6)}...).`);
-        
-        customerNumberInput.value = '';
-        customerWalletInput.value = '';
-    }
-    
-    async function refreshAllBalances() {
-        if (customers.length === 0) return showModal('Info', 'No customers to refresh.');
-        addLogEntry('Refreshing all customer balances...');
-        for (const customer of customers) {
-            const balances = await fetchCustomerBalances(customer.wallet);
-            Object.assign(customer, balances);
-        }
-        renderCustomers();
-        addLogEntry('All balances updated.');
-    }
-    
-    function deleteCustomer(walletAddress) {
-        customers = customers.filter(c => c.wallet.toLowerCase() !== walletAddress.toLowerCase());
-        saveCustomersToStorage();
-        renderCustomers();
-        addLogEntry(`Removed customer ${walletAddress.substring(0,6)}...`);
-    }
-
-    function renderCustomers(fetchBalances = true) {
-        const customerListBody = document.getElementById('customer-list-body');
-        if (customers.length === 0) {
-            customerListBody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-gray-500 dark:text-gray-400">No customers added yet.</td></tr>`;
-            return;
-        }
-        customerListBody.innerHTML = '';
-        customers.forEach(customer => {
-            const tr = document.createElement('tr');
-            tr.className = 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-b dark:border-gray-700';
-            tr.innerHTML = `
-                <td class="px-4 py-3">
-                    <p class="font-semibold text-sm text-gray-900 dark:text-gray-100">${customer.id}</p>
-                    <a href="https://arbiscan.io/address/${customer.wallet}" target="_blank" class="text-xs font-mono text-blue-400 hover:underline">${customer.wallet}</a>
-                </td>
-                <td class="px-4 py-3 text-right font-mono">${typeof customer.spn === 'number' ? customer.spn.toLocaleString() : '...'}</td>
-                <td class="px-4 py-3 text-right font-mono">${typeof customer.srv === 'number' ? customer.srv.toLocaleString() : '...'}</td>
-                <td class="px-4 py-3 text-right font-mono">${typeof customer.srev === 'number' ? customer.srev.toLocaleString() : '...'}</td>
-                <td class="px-4 py-3 text-right font-mono">$${typeof customer.usdc === 'number' ? customer.usdc.toFixed(2) : '...'}</td>
-                <td class="px-4 py-3 text-right"><button onclick="deleteCustomer('${customer.wallet}')" class="text-red-500 hover:text-red-700 font-bold">X</button></td>
-            `;
-            customerListBody.appendChild(tr);
-        });
-    }
-
-    // --- Action Functions ---
-    async function issueSPN() {
-        const target = document.getElementById('targetCustomer').value;
-        const amount = document.getElementById('issueAmount').value;
-        if (!target || !amount) return showModal('Input Error', 'Please provide a target wallet and an amount to issue.');
-        await handleTransaction(contracts.spn, 'mint', [target, ethers.parseUnits(amount, 18)], `Issue ${amount} SPN`);
-    }
-
-    async function convertToSRV() {
-        const target = document.getElementById('targetCustomer').value;
-        if (!target) return showModal('Input Error', 'Please provide a target wallet address.');
-        await handleTransaction(contracts.converter, 'convert', [target], 'Convert SPN to SRV');
-    }
-
-    async function stakeSRV() {
-        const target = document.getElementById('targetCustomer').value;
-        if (!target) return showModal('Input Error', 'Please provide a target wallet address.');
-        await handleTransaction(contracts.staking, 'stake', [target], 'Stake SRV');
-    }
-    
-    async function fundYieldContract() {
-        const amount = document.getElementById('fundAmount').value;
-        if (!amount) return showModal('Input Error', 'Please enter an amount to fund.');
-        
-        showModal('Processing', `Approving ${amount} Reward Tokens...`);
-        try {
-            const amountInUnits = ethers.parseUnits(amount, 6); 
-            const approveTx = await contracts.reward.approve(addresses.yield, amountInUnits);
-            await approveTx.wait();
-            addLogEntry('Approval successful. Now funding...');
-            await handleTransaction(contracts.yield, 'fund', [amountInUnits], `Fund Yield Contract`);
-        } catch(e) {
-            console.error("Funding failed", e);
-            showModal('Error', `Funding failed: ${e.message}`);
-        }
-    }
-    
-    async function handleTransaction(contract, method, args, name) {
-        if (!signer) return showModal('Error', 'Please connect your wallet first.');
-        showModal('Processing', `Sending "${name}" transaction...`);
-        try {
-            const tx = await contract[method](...args);
-            addLogEntry(`Transaction sent for "${name}": ${tx.hash.substring(0,10)}...`);
-            await tx.wait();
-            showModal('Success', `"${name}" transaction confirmed!`);
-            addLogEntry(`"${name}" transaction confirmed.`);
-            refreshAllBalances();
-            fetchSystemStats();
-        } catch (e) {
-            console.error(`${name} failed:`, e);
-            showModal('Error', `${name} failed: ${e.reason || e.message}`);
-        }
-    }
-
-    // --- Logging ---
-    function addLogEntry(message) {
-        const logList = document.getElementById('transaction-log');
-        if (logList.children.length > 0 && logList.children[0].innerText.startsWith('No actions')) {
-            logList.innerHTML = '';
-        }
-        
-        const li = document.createElement('li');
-        li.className = 'text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 pb-1';
-        
-        const timestamp = new Date().toLocaleTimeString();
-        li.innerHTML = `<span class="font-mono text-xs mr-2">[${timestamp}]</span> ${message}`;
-        
-        logList.prepend(li);
-        if (logList.children.length > 50) {
-            logList.removeChild(logList.lastChild);
-        }
-    }
-
-    // --- UI Utility: Modal ---
-    function showModal(title, message) {
-        const existingModal = document.getElementById('alertModal');
-        if (existingModal) existingModal.remove();
-
-        const modal = document.createElement('div');
-        modal.id = 'alertModal';
-        modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4';
-        modal.innerHTML = `
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-6 w-full max-w-sm text-center border-2 border-blue-500">
-                <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">${title}</h3>
-                <p class="text-gray-600 dark:text-gray-300 mb-6 break-words">${message}</p>
-                <button onclick="document.getElementById('alertModal').remove()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">Close</button>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
-    
-    // --- Expose functions to global scope for HTML onclick handlers ---
-    window.connectWallet = connectWallet;
-    window.addCustomer = addCustomer;
-    window.refreshAllBalances = refreshAllBalances;
-    window.deleteCustomer = deleteCustomer;
-    window.issueSPN = issueSPN;
-    window.convertToSRV = convertToSRV;
-    window.stakeSRV = stakeSRV;
-    window.fundYieldContract = fundYieldContract;
-
-  </script>
+    </script>
 </body>
 </html>
