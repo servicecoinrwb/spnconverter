@@ -238,10 +238,19 @@
                 
                 const handleWithdraw = async () => {
                     if (!converterContract || !withdrawAddr || !withdrawAmt || !window.ethers) return;
+                    
+                    let checksummedAddress;
+                    try {
+                        checksummedAddress = window.ethers.utils.getAddress(withdrawAddr);
+                    } catch (err) {
+                        showNotification('Invalid recipient address.', 'error');
+                        return;
+                    }
+
                     setIsLoading(true);
                     try {
                         const amountInWei = window.ethers.utils.parseUnits(withdrawAmt, srvDecimals);
-                        const tx = await converterContract.withdrawSRV(withdrawAddr, amountInWei);
+                        const tx = await converterContract.withdrawSRV(checksummedAddress, amountInWei);
                         await tx.wait();
                         showNotification('SRV withdrawn successfully.', 'success');
                         initializeContractsAndData();
@@ -254,9 +263,18 @@
                 
                 const handleSetDao = async () => {
                      if (!converterContract || !newDaoAddr || !window.ethers) return;
+
+                     let checksummedAddress;
+                     try {
+                        checksummedAddress = window.ethers.utils.getAddress(newDaoAddr);
+                     } catch (err) {
+                        showNotification('Invalid new DAO address.', 'error');
+                        return;
+                     }
+
                     setIsLoading(true);
                     try {
-                        const tx = await converterContract.setDAO(newDaoAddr);
+                        const tx = await converterContract.setDAO(checksummedAddress);
                         await tx.wait();
                         showNotification('DAO address updated.', 'success');
                         initializeContractsAndData();
@@ -483,18 +501,23 @@
                     showNotification('Please enter a Customer # and Address.', 'error');
                     return;
                 }
-                const newCustomer = {
-                    id: newCustomerId,
-                    address: newCustomerAddress,
-                    spn: 0,
-                    srv: 0,
-                    srev: '0',
-                    usdc: '$0.00',
-                };
-                setCustomers(currentCustomers => [newCustomer, ...currentCustomers]);
-                showNotification(`Customer ${newCustomerId} added successfully.`, 'success');
-                setNewCustomerId('');
-                setNewCustomerAddress('');
+                try {
+                    const checksummedAddress = window.ethers.utils.getAddress(newCustomerAddress);
+                    const newCustomer = {
+                        id: newCustomerId,
+                        address: checksummedAddress,
+                        spn: 0,
+                        srv: 0,
+                        srev: '0',
+                        usdc: '$0.00',
+                    };
+                    setCustomers(currentCustomers => [newCustomer, ...currentCustomers]);
+                    showNotification(`Customer ${newCustomerId} added successfully.`, 'success');
+                    setNewCustomerId('');
+                    setNewCustomerAddress('');
+                } catch (error) {
+                     showNotification('Invalid customer wallet address.', 'error');
+                }
             };
 
             const handleIssueSpn = async () => {
@@ -506,14 +529,23 @@
                     showNotification('You do not have permission to mint tokens.', 'error');
                     return;
                 }
+
+                let checksummedAddress;
+                try {
+                    checksummedAddress = window.ethers.utils.getAddress(issueAddress);
+                } catch (error) {
+                    showNotification('Invalid address for issuing SPN.', 'error');
+                    return;
+                }
+
                 setIsLoading(true);
                 try {
                     const spnContract = new window.ethers.Contract(SPN_TOKEN_ADDRESS, SPN_TOKEN_ABI, signer);
                     const amountInWei = window.ethers.utils.parseUnits(issueAmount, 18); // SPN has 18 decimals
-                    const tx = await spnContract.mint(issueAddress, amountInWei);
+                    const tx = await spnContract.mint(checksummedAddress, amountInWei);
                     showNotification('Mint transaction sent...', 'info');
                     await tx.wait();
-                    showNotification(`${issueAmount} SPN minted to ${issueAddress.substring(0,6)}...`, 'success');
+                    showNotification(`${issueAmount} SPN minted to ${checksummedAddress.substring(0,6)}...`, 'success');
                     setIssueAddress('');
                     setIssueAmount('');
                 } catch(err) {
