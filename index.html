@@ -454,7 +454,7 @@
             const [issueAddress, setIssueAddress] = useState('');
             const [issueAmount, setIssueAmount] = useState('');
             const [isMinter, setIsMinter] = useState(false);
-
+            
             // Fetch contract addresses and check for minter role
             useEffect(() => {
                 const initAdminData = async () => {
@@ -555,7 +555,6 @@
                     setIsLoading(false);
                 }
             };
-
 
             return (
                 <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 text-white">
