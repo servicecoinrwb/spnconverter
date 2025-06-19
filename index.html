@@ -420,6 +420,14 @@
         function AdminPortalPage({ account, showNotification }) {
             const [customers, setCustomers] = useState(initialCustomers);
             const [isLoading, setIsLoading] = useState(false);
+            
+            // State for "Add Customer" inputs
+            const [newCustomerId, setNewCustomerId] = useState('');
+            const [newCustomerAddress, setNewCustomerAddress] = useState('');
+
+            // State for "Issue SPN" inputs
+            const [issueAddress, setIssueAddress] = useState('');
+            const [issueAmount, setIssueAmount] = useState('');
 
             const handleRefresh = () => {
                 setIsLoading(true);
@@ -436,6 +444,38 @@
                 setCustomers(currentCustomers => currentCustomers.filter(customer => customer.id !== customerId));
                 showNotification(`Customer ${customerId} removed.`, 'success');
             };
+            
+            const handleAddCustomer = () => {
+                if (!newCustomerId || !newCustomerAddress) {
+                    showNotification('Please enter a Customer # and Address.', 'error');
+                    return;
+                }
+                const newCustomer = {
+                    id: newCustomerId,
+                    address: newCustomerAddress,
+                    spn: 0,
+                    srv: 0,
+                    srev: '0',
+                    usdc: '$0.00',
+                };
+                setCustomers(currentCustomers => [newCustomer, ...currentCustomers]);
+                showNotification(`Customer ${newCustomerId} added successfully.`, 'success');
+                setNewCustomerId('');
+                setNewCustomerAddress('');
+            };
+
+            const handleIssueSpn = () => {
+                if (!issueAddress || !issueAmount || parseFloat(issueAmount) <= 0) {
+                    showNotification('Please enter a valid address and amount > 0.', 'error');
+                    return;
+                }
+                // Here you would typically call a smart contract function.
+                // For this UI demo, we'll just show a success message.
+                showNotification(`${issueAmount} SPN issued to ${issueAddress.substring(0,6)}...`, 'success');
+                setIssueAddress('');
+                setIssueAmount('');
+            };
+
 
             return (
                 <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 text-white">
@@ -476,18 +516,18 @@
                              <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
                                 <h2 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">2. Add Customer to Dashboard</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                    <input type="text" placeholder="e.g. CUST-1001" className="md:col-span-1 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
-                                    <input type="text" placeholder="0x..." className="md:col-span-1 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
-                                    <button className="md:col-span-1 w-full py-3 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-600">Add Customer</button>
+                                    <input type="text" value={newCustomerId} onChange={e => setNewCustomerId(e.target.value)} placeholder="e.g. 1003" className="md:col-span-1 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
+                                    <input type="text" value={newCustomerAddress} onChange={e => setNewCustomerAddress(e.target.value)} placeholder="0x..." className="md:col-span-1 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
+                                    <button onClick={handleAddCustomer} className="md:col-span-1 w-full py-3 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-600">Add Customer</button>
                                 </div>
                             </div>
                             {/* Issue SPN */}
                             <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
                                 <h2 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">3. Admin: Issue SPN (Points)</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                    <input type="text" placeholder="Enter wallet address to issue tokens to" className="md:col-span-2 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
-                                    <input type="text" placeholder="e.g. 500" className="md:col-span-1 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
-                                    <button className="md:col-span-3 w-full mt-2 py-3 bg-green-500 text-black font-bold rounded-lg hover:bg-green-600">Issue SPN</button>
+                                    <input type="text" value={issueAddress} onChange={e => setIssueAddress(e.target.value)} placeholder="Enter wallet address to issue tokens to" className="md:col-span-2 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
+                                    <input type="text" value={issueAmount} onChange={e => setIssueAmount(e.target.value)} placeholder="e.g. 500" className="md:col-span-1 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
+                                    <button onClick={handleIssueSpn} className="md:col-span-3 w-full mt-2 py-3 bg-green-500 text-black font-bold rounded-lg hover:bg-green-600">Issue SPN</button>
                                 </div>
                             </div>
                             {/* Customer Userbase */}
@@ -634,4 +674,4 @@
 
     </script>
 </body>
-</ht
+</html>
