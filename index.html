@@ -533,8 +533,11 @@
                 setIsLoading(true);
                 try {
                     const addressToMint = issueAddress.trim();
+                     if (!window.ethers.utils.isAddress(addressToMint)) {
+                        throw new Error("Invalid address format");
+                    }
                     const spnContract = new window.ethers.Contract(SPN_TOKEN_ADDRESS, SPN_TOKEN_ABI, signer);
-                    const amountInWei = window.ethers.utils.parseUnits(issueAmount, 18); // SPN has 18 decimals
+                    const amountInWei = window.ethers.utils.parseUnits(issueAmount, 18);
                     const tx = await spnContract.mint(addressToMint, amountInWei);
                     showNotification('Mint transaction sent...', 'info');
                     await tx.wait();
@@ -543,7 +546,7 @@
                     setIssueAmount('');
                 } catch(err) {
                     console.error("SPN Minting failed:", err);
-                    showNotification(err.reason || 'SPN Minting failed.', 'error');
+                    showNotification(err.reason || err.message || 'SPN Minting failed.', 'error');
                 } finally {
                     setIsLoading(false);
                 }
