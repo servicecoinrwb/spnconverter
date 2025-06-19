@@ -601,7 +601,7 @@
                             <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
                                 <h2 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">3. Admin: Issue SPN (Points)</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                    <input type="text" value={issueAddress} onChange={e => setIssueAddress(e.target.value)} placeholder="Enter wallet address to issue tokens to" className="md:col-span-2 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
+                                    <input type="text" value={issueAddress} onChange={e => setIssueAddress(e.target.value)} placeholder="Click user below or enter address" className="md:col-span-2 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
                                     <input type="text" value={issueAmount} onChange={e => setIssueAmount(e.target.value)} placeholder="e.g. 500" className="md:col-span-1 bg-gray-900 border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-cyan-500" />
                                     <button onClick={handleIssueSpn} disabled={!isMinter || isLoading} className="md:col-span-3 w-full mt-2 py-3 bg-green-500 text-black font-bold rounded-lg hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center">
                                         {isLoading ? <Spinner/> : (isMinter ? 'Issue SPN' : 'Minter Role Required')}
@@ -630,14 +630,18 @@
                                         </thead>
                                         <tbody>
                                             {customers.map((customer) => (
-                                                <tr key={customer.id} className="border-b border-gray-700 font-mono">
+                                                <tr 
+                                                    key={customer.id} 
+                                                    className={`border-b border-gray-700 font-mono hover:bg-gray-700 cursor-pointer ${issueAddress === customer.address ? 'bg-cyan-900/50' : ''}`}
+                                                    onClick={() => setIssueAddress(customer.address)}
+                                                >
                                                     <td className="px-4 py-3">{customer.id}<br/><span className="text-gray-400 text-xs">{customer.address}</span></td>
                                                     <td className="px-4 py-3">{customer.spn}</td>
                                                     <td className="px-4 py-3">{customer.srv}</td>
                                                     <td className="px-4 py-3">{customer.srev}</td>
                                                     <td className="px-4 py-3">{customer.usdc}</td>
                                                     <td className="px-4 py-3 text-center">
-                                                        <button onClick={() => handleEraseUser(customer.id)} className="text-red-500 hover:text-red-400 text-xl font-bold">&times;</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); handleEraseUser(customer.id); }} className="text-red-500 hover:text-red-400 text-xl font-bold">&times;</button>
                                                     </td>
                                                 </tr>
                                             ))}
